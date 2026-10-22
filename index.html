@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 浪人祭 Vagabond Festival 看團紀錄表</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background-color: #060b19;
+      color: #f1f5f9;
+      overflow-x: hidden;
+    }
+    .font-mono-time {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Proportional Timetable Grid Styles */
+    :root {
+      --px-per-min: 2.6px; /* Default scale: 1 minute = 2.6px */
+    }
+    .timetable-wrapper {
+      position: relative;
+      overflow-x: auto;
+      background: #091024;
+    }
+    .time-grid-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      border-top: 1px dashed rgba(51, 65, 85, 0.5);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .time-grid-line.major {
+      border-top: 1px solid rgba(71, 85, 105, 0.85);
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.25) 0%, transparent 24px);
+    }
+    .show-block {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      border-radius: 10px;
+      transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 10;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .show-block:hover {
+      z-index: 30;
+      transform: translateY(-1px) scale(1.015);
+      box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.3);
+    }
+    .show-block.selected-mine {
+      box-shadow: 0 0 0 2px #38bdf8, 0 8px 20px -4px rgba(56, 189, 248, 0.4);
+      z-index: 20;
+    }
+    .show-block.clash-mine {
+      box-shadow: 0 0 0 2px #ef4444, 0 0 15px rgba(239, 68, 68, 0.45);
+      animation: clash-pulse 2s infinite;
+    }
+    @keyframes clash-pulse {
+      0%, 100% { box-shadow: 0 0 0 2px #ef4444, 0 0 12px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 3px #f87171, 0 0 20px rgba(239, 68, 68, 0.75); }
+    }
+    /* Sunset indicator */
+    .sunset-band {
+      position: absolute;
+      left: 0;
+      right: 0;
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(239, 68, 68, 0.15) 50%, rgba(168, 85, 247, 0.15) 100%);
+      border-top: 1px solid rgba(245, 158, 11, 0.4);
+      border-bottom: 1px solid rgba(239, 68, 68, 0.4);
+      pointer-events: none;
+      z-index: 2;
+    }
+    /* Current time indicator */
+    .now-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      border-top: 2px solid #10b981;
+      z-index: 25;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-cyan-500 selection:text-slate-950">
+
+  <!-- TOP HEADER & GOOGLE FORM CLOUD BAR -->
+  <header class="bg-slate-900 border-b border-slate-800 relative z-30">
+    <div class="max-w-[1600px] mx-auto px-4 py-4">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- Brand & Title -->
+        <div class="flex items-start sm:items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 via-red-500 to-cyan-500 p-0.5 shrink-0 shadow-lg shadow-amber-500/10">
+            <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-2xl font-black">
+              🌊
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                2026 浪人祭 VAGABOND FESTIVAL
+              </span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-700/40 text-slate-300 border border-slate-600/50 flex items-center gap-1.5">
+                💾 純靜態網頁 · 紀錄儲存在本機瀏覽器
+              </span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">
+              跨舞台時間軸 & 多人看團紀錄表
+            </h1>
+          </div>
+        </div>
+
+        <!-- Data Controls -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btn-quick-share-url" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs sm:text-sm font-bold transition flex items-center gap-1.5">
+            <span>🔗</span> 複製全團分享網址
+          </button>
+          <button id="btn-clear-all" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-300 border border-slate-700 text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+            <span>🗑️</span> 清除全部紀錄
+          </button>
+        </div>
+      </div>
+
+      <!-- MULTI-USER BAR (Stored in localStorage) -->
+      <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-bold text-slate-400 flex items-center gap-1">
+            <span>👤 點擊切換目前紀錄人員：</span>
+          </span>
+          <div id="user-chips-container" class="flex items-center gap-1.5 flex-wrap">
+            <!-- Dynamically populated user chips -->
+          </div>
+          <button id="btn-add-user" class="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-dashed border-cyan-500/50 text-xs font-bold transition flex items-center gap-1">
+            <span>+</span> 新增團友
+          </button>
+          <button id="btn-delete-user" class="hidden px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-red-950/60 text-slate-400 hover:text-red-300 border border-slate-700 text-xs font-medium transition">
+            ✕ 刪除目前成員
+          </button>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs text-slate-400 self-end md:self-auto flex-wrap">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-sm bg-cyan-500/40 border border-cyan-400 inline-block"></span>
+            <span>當前已選 (<strong id="current-user-count" class="text-white">0</strong>)</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-sm bg-red-500/40 border border-red-500 inline-block"></span>
+            <span>時段衝堂 (<strong id="current-clash-count" class="text-red-400">0</strong>)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION & TIMETABLE TOOLBAR -->
+  <div class="sticky top-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md">
+    <div class="max-w-[1600px] mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Left: Day Switcher & Main Views -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="inline-flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+          <button id="btn-day-1" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-black transition bg-amber-500 text-slate-950 shadow">
+            ☀️ DAY 1 (11/07 六)
+          </button>
+          <button id="btn-day-2" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-400 hover:text-white transition">
+            🌅 DAY 2 (11/08 日)
+          </button>
+        </div>
+
+        <div class="h-5 w-[1px] bg-slate-800 hidden sm:block"></div>
+
+        <div class="flex items-center gap-1">
+          <button data-view="grid" class="view-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition flex items-center gap-1.5">
+            <span>📊</span> 2D 時間軸總表
+          </button>
+          <button data-view="compare" class="view-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5">
+            <span>👥</span> 多人看團對照表
+          </button>
+          <button data-view="personal" class="view-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5">
+            <span>📋</span> 個人跑台清單與衝堂
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Zoom Scale, Filters & Search -->
+      <div id="grid-controls-bar" class="flex items-center gap-2 flex-wrap">
+        <!-- Time Zoom Controls -->
+        <div class="hidden xl:flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs text-slate-400">
+          <span>時間軸比例:</span>
+          <button data-zoom="2" class="zoom-btn px-1.5 py-0.5 rounded hover:text-white">緊湊</button>
+          <button data-zoom="2.6" class="zoom-btn px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold">標準</button>
+          <button data-zoom="3.5" class="zoom-btn px-1.5 py-0.5 rounded hover:text-white">寬敞</button>
+        </div>
+
+        <!-- Filter Buttons -->
+        <button id="btn-filter-selected" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition flex items-center gap-1">
+          <span>⭐</span> 突顯已選
+        </button>
+        <button id="btn-filter-friends" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition flex items-center gap-1">
+          <span>🔥</span> 顯示團友熱門
+        </button>
+
+        <!-- Search Box -->
+        <div class="relative w-44 sm:w-56">
+          <input type="text" id="search-input" placeholder="搜尋樂團或曲風..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-3 pr-7 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+          <button id="btn-clear-search" class="hidden absolute right-2 top-1 text-slate-500 hover:text-white text-xs">✕</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto px-2 sm:px-4 py-4">
+
+    <!-- ================= VIEW 1: 2D PROPORTIONAL TIMETABLE GRID ================= -->
+    <section id="view-grid" class="space-y-3">
+      
+      <!-- Legend & Quick Tip -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+        <div class="flex items-center gap-4 flex-wrap">
+          <span class="flex items-center gap-1.5">
+            <span class="text-cyan-400 font-bold">💡 操作提示：</span>
+            <span>直接<strong>點擊時間軸方塊</strong>即可勾選/取消想看的樂團；點擊方塊右上角 <strong>ⓘ</strong> 查看樂團介紹與試聽。</span>
+          </span>
+        </div>
+        <div class="flex items-center gap-3 text-[11px] text-slate-400">
+          <span class="flex items-center gap-1">
+            <span class="w-3 h-3 rounded-sm bg-gradient-to-r from-amber-500/30 to-red-500/30 border border-amber-500/50 inline-block"></span>
+            17:15-17:45 觀夕落日魔幻時刻
+          </span>
+        </div>
+      </div>
+
+      <!-- TIMETABLE MATRIX CONTAINER -->
+      <div class="border border-slate-800 rounded-2xl overflow-hidden shadow-2xl bg-slate-950">
+        <div class="timetable-wrapper">
+          <div class="min-w-[1050px] relative">
+            
+            <!-- Sticky Stage Headers -->
+            <div class="sticky top-0 z-30 flex bg-slate-900/95 backdrop-blur border-b border-slate-800">
+              <div class="w-16 sm:w-20 shrink-0 border-r border-slate-800 py-3 px-2 text-center text-[11px] font-mono-time font-bold text-slate-400 flex flex-col items-center justify-center">
+                <span>TIME</span>
+                <span class="text-[9px] text-slate-500">11:00-22:00</span>
+              </div>
+              <div id="timetable-stage-headers" class="flex-1 grid grid-cols-7 divide-x divide-slate-800">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+
+            <!-- Proportional Time Body -->
+            <div id="timetable-body-container" class="relative flex" style="height: 1560px;">
+              <!-- Left Time Axis Column -->
+              <div id="timetable-time-axis" class="w-16 sm:w-20 shrink-0 border-r border-slate-800 bg-slate-950/90 relative z-20 select-none">
+                <!-- Time labels every 30 mins -->
+              </div>
+
+              <!-- 7 Stage Columns + Background Grid Lines -->
+              <div class="flex-1 relative">
+                <!-- Horizontal Grid Lines & Sunset Band -->
+                <div id="timetable-grid-lines" class="absolute inset-0 pointer-events-none"></div>
+
+                <!-- 7 Stage Columns -->
+                <div id="timetable-stage-columns" class="absolute inset-0 grid grid-cols-7 divide-x divide-slate-800/70">
+                  <!-- Populated via JS -->
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ================= VIEW 2: MULTI-USER COMPARISON TABLE ================= -->
+    <section id="view-compare" class="hidden space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-black text-white flex items-center gap-2">
+              <span>👥 團友觀看名單總表</span>
+              <span id="compare-day-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">DAY 1</span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">
+              依照演出時間排序，清楚呈現每個時段各個團友想去哪個舞台、哪些場次是全體必看，也能直接在表格中幫團友勾選！
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="flex items-center gap-2 text-xs text-slate-300 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 cursor-pointer">
+              <input type="checkbox" id="chk-compare-only-picked" class="rounded bg-slate-800 border-slate-600 text-cyan-500 focus:ring-0">
+              <span>僅顯示有人勾選的場次</span>
+            </label>
+            <button id="btn-export-csv" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition">
+              📥 匯出 CSV 報表
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison Matrix Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr id="compare-table-head" class="bg-slate-950 border-b border-slate-800 text-xs font-bold text-slate-400">
+                <!-- Populated via JS -->
+              </tr>
+            </thead>
+            <tbody id="compare-table-body" class="divide-y divide-slate-800/70 text-xs sm:text-sm">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ================= VIEW 3: PERSONAL SCHEDULE & CLASH SOLVER ================= -->
+    <section id="view-personal" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-black text-white flex items-center gap-2">
+              <span>📋 <span id="personal-user-title" class="text-cyan-400">尚未選擇成員</span> 的專屬時間表與衝堂分析</span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">
+              系統自動計算換場空檔與重疊分鐘數，並可匯出至手機行事曆或複製文字清單。
+            </p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="btn-export-ics" class="px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition flex items-center gap-1.5">
+              <span>📅</span> 下載 .ics 手機行事曆
+            </button>
+            <button id="btn-copy-text" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition">
+              📋 複製文字清單
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left 2 cols: Chronological Run-Sheet -->
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 class="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center justify-between">
+            <span>🏃 依時間排序跑台路線</span>
+            <span id="personal-count-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">0 場演出</span>
+          </h3>
+          <div id="personal-timeline-list" class="space-y-3">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Right 1 col: Clash Solver -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 class="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center justify-between">
+            <span>⚠️ 衝堂重疊偵測器</span>
+            <span id="personal-clash-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">0 衝突</span>
+          </h3>
+          <div id="personal-clash-list" class="space-y-3">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 0. ADD / EDIT USER MODAL (No Browser Prompt!) -->
+  <div id="user-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl">
+      <div class="p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">👤</span>
+          <h3 class="text-lg font-black text-white">新增 / 設定看團成員</h3>
+        </div>
+        <button id="btn-close-user-modal" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold">✕</button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">成員暱稱 (會顯示在時間軸與對照表上)</label>
+          <input type="text" id="input-new-user-name" placeholder="例如：小美、阿傑、台南地頭蛇..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">選擇代表頭像 Emoji</label>
+          <div id="avatar-picker-grid" class="grid grid-cols-6 gap-2">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">選擇代表標籤顏色</label>
+          <div id="color-picker-grid" class="flex items-center gap-2.5">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+          <button id="btn-cancel-user-modal" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">取消</button>
+          <button id="btn-confirm-add-user" class="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black transition shadow-lg">
+            ✨ 建立並開始選團
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ARTIST DETAIL & GROUP PICKER MODAL -->
+  <div id="artist-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl">
+      <div id="modal-header-bar" class="p-5 bg-slate-950 border-b border-slate-800 flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1.5">
+            <span id="modal-stage-pill" class="px-2.5 py-0.5 rounded text-xs font-bold bg-red-500 text-white">鯤鯓舞台</span>
+            <span id="modal-time-pill" class="px-2.5 py-0.5 rounded text-xs font-mono-time font-bold bg-slate-800 text-cyan-300 border border-slate-700">12:50 - 13:30</span>
+          </div>
+          <h3 id="modal-artist-title" class="text-2xl font-black text-white">樂團名稱</h3>
+          <p id="modal-artist-subtitle" class="text-xs text-slate-400 mt-0.5">Origin • Genre</p>
+        </div>
+        <button id="btn-close-artist-modal" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div class="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-xs text-cyan-200 font-medium" id="modal-artist-highlight">
+          演出亮點介紹
+        </div>
+        <p id="modal-artist-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          詳細介紹...
+        </p>
+
+        <!-- Who is watching in the group -->
+        <div class="pt-3 border-t border-slate-800">
+          <div class="text-xs font-bold text-slate-400 mb-2">👥 點擊切換哪些團友要看這場演出：</div>
+          <div id="modal-group-toggles" class="flex flex-wrap gap-2">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Quick External Search -->
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <a id="modal-yt-link" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 text-xs font-bold transition">
+              ▶ YouTube 試聽
+            </a>
+            <a id="modal-sp-link" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition">
+              🎧 Spotify
+            </a>
+          </div>
+          <button id="modal-btn-toggle-active" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition">
+            ⭐ 加入當前人員名單
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast-box" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 border border-cyan-500/50 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-medium">
+    <span id="toast-icon">✅</span>
+    <span id="toast-text">操作成功</span>
+  </div>
+
+  <!-- ================= APPLICATION JAVASCRIPT (PURE STATIC / LOCALSTORAGE) ================= -->
+  <script>
+
+    const STAGES = [
+      { id: 'kunshen',   name: '鯤鯓',         sub: 'Kun Shen Stage',   short: '鯤鯓',   color: '#dc2626', bg: 'rgba(220, 38, 38, 0.22)', border: '#ef4444' },
+      { id: 'jianshih',  name: '劍獅',         sub: 'Jian Shih Stage',  short: '劍獅',   color: '#0891b2', bg: 'rgba(8, 145, 178, 0.22)', border: '#06b6d4' },
+      { id: 'jinhoting', name: '金鶴廳',       sub: 'Jin Ho Ting Stage',short: '金鶴廳', color: '#d97706', bg: 'rgba(217, 119, 6, 0.22)',  border: '#f59e0b' },
+      { id: 'xiaosimen', name: '小嘻門',       sub: 'Xiao Si Men Stage',short: '小嘻門', color: '#9333ea', bg: 'rgba(147, 51, 234, 0.22)', border: '#a855f7' },
+      { id: 'fongshih',  name: '風獅',         sub: 'Fong Shih Stage',  short: '風獅',   color: '#059669', bg: 'rgba(5, 150, 105, 0.22)',  border: '#10b981' },
+      { id: 'ronincram', name: '浪入塾',       sub: 'Ronin Cram School',short: '浪入塾', color: '#ea580c', bg: 'rgba(234, 88, 12, 0.22)',  border: '#f97316' },
+      { id: 'redbull',   name: 'Red Bull LUKA',sub: 'DJ & Finger Drum', short: 'LUKA',   color: '#2563eb', bg: 'rgba(37, 99, 235, 0.22)',  border: '#3b82f6' }
+    ];
+
+    const SHOWS = [
+      // ==================== DAY 1 (11.07 SAT) ====================
+      // 1. 鯤鯓 Kun Shen Stage (Day 1)
+      { id: 'd1-kun-1', day: 1, stage: 'kunshen', start: '12:50', end: '13:30', artist: 'B&ZAI', origin: '🇯🇵 日本 / 國際', genre: 'Rock / Alternative', highlight: 'Day 1 鯤鯓舞台開場！炸裂音牆揭開浪人祭序幕', desc: '11/07 12:50 於鯤鯓舞台登場，以強勁節奏與極具穿透力的現場能量點燃觀夕平臺大草皮。' },
+      { id: 'd1-kun-2', day: 1, stage: 'kunshen', start: '14:30', end: '15:10', artist: 'Been Stellar', origin: '🇺🇸 美國紐約', genre: 'Indie Rock / Post-Punk / Shoegaze', highlight: '紐約當紅新銳後龐克瞪鞋樂團！國際級迷幻音場降臨安平', desc: '來自紐約的五人獨立搖滾樂團，揉合90年代另類搖滾、瞪鞋音牆與紐約後龐克氣息，現場張力極強。' },
+      { id: 'd1-kun-3', day: 1, stage: 'kunshen', start: '16:10', end: '16:50', artist: '雀斑 Freckles', origin: '🇹🇼 台灣', genre: 'Indie Pop / Shibuya-kei', highlight: '台灣傳奇甜美澀谷系樂團！斑斑帶領全場重溫青春浪漫旋律', desc: '台灣獨立音樂圈極具代表性的清新樂團，《不標準情人》等經典曲目伴隨午後海風無比愜意。' },
+      { id: 'd1-kun-4', day: 1, stage: 'kunshen', start: '17:50', end: '18:30', artist: 'Sunny Day Service', origin: '🇯🇵 日本', genre: 'Shibuya-kei / Folk Rock', highlight: '日本90年代傳奇名團！曾我部惠一伴隨安平夕陽餘暉的極致浪漫', desc: '日本搖滾史上的經典樂團，溫暖詩意的日系民謠搖滾與海邊日落魔幻時刻完美契合。' },
+      { id: 'd1-kun-5', day: 1, stage: 'kunshen', start: '19:30', end: '20:10', artist: '拍謝少年 ft. 謝銘祐', origin: '🇹🇼 台灣', genre: '台語搖滾 / 府城民謠跨界', highlight: '虱目魚大軍聯手台南音樂教父謝銘祐！最正港的府城海味大合唱', desc: '台語搖滾代表拍謝少年與金曲歌王「黑哥」謝銘祐史詩級合體，唱出最深沉澎湃的南台灣土地靈魂。' },
+      { id: 'd1-kun-6', day: 1, stage: 'kunshen', start: '21:10', end: '21:50', artist: 'ano', origin: '🇯🇵 日本', genre: 'J-Pop / Alternative Punk', highlight: 'Day 1 鯤鯓壓軸女神！《鏈鋸人》片尾曲〈ちゅ、多様性。〉引爆全場', desc: '日本超人氣跨界偶像與搖滾歌手 ano 壓軸登場！獨特甜美又狂暴的病嬌搖滾舞台魅力席捲浪人祭夜空。' },
+
+      // 2. 劍獅 Jian Shih Stage (Day 1)
+      { id: 'd1-jian-1', day: 1, stage: 'jianshih', start: '12:00', end: '12:40', artist: '淺堤 ft. Kim Sawol', origin: '🇹🇼 台灣 × 🇰🇷 韓國', genre: 'Indie Rock / Folk Pop', highlight: '正午跨國夢幻共演！高雄淺堤聯手韓國大賞指標創作女聲金四月', desc: '台灣溫柔海風代表淺堤與韓國獨立民謠女神 Kim Sawol（金四月）限定合作，為劍獅舞台帶來最驚喜的開場。' },
+      { id: 'd1-jian-2', day: 1, stage: 'jianshih', start: '13:40', end: '14:20', artist: 'こっちのけんと Kocchi no Kento', origin: '🇯🇵 日本', genre: 'J-Pop / Acapella Pop', highlight: '破億神曲〈はいよろこんで〉本尊降臨！全場一起跳希臘摩斯密碼舞', desc: '紅遍全球社群與登上紅白歌合戰的日本鬼才創作歌手，超強節奏感與歡樂互動絕對讓劍獅舞台擠爆！' },
+      { id: 'd1-jian-3', day: 1, stage: 'jianshih', start: '15:20', end: '16:00', artist: '紫 今 (Murasaki Ima)', origin: '🇯🇵 日本', genre: 'J-Pop / R&B Rock', highlight: '日本Z世代天才全能女性創作歌手！〈魔性の女A〉中毒旋律現場重現', desc: '集詞曲編曲與視覺才華於一身的日本新世代歌姬，兼具高亢爆發力與魅惑轉音的實力派現場。' },
+      { id: 'd1-jian-4', day: 1, stage: 'jianshih', start: '17:00', end: '17:40', artist: '血肉果汁機 Flesh Juicer', origin: '🇹🇼 台灣', genre: '宮廟金屬核 Metalcore', highlight: '金曲最佳樂團夕陽開圈！粗殘死腔結合台灣傳統五聲音階「殺翻現場」', desc: '頭戴豬頭面具的台中重金屬霸主，在17:00黃昏時刻於劍獅舞台建宮蓋廟，帶來最震撼的衝撞體驗。' },
+      { id: 'd1-jian-5', day: 1, stage: 'jianshih', start: '18:40', end: '19:20', artist: '理想混蛋 Bestards', origin: '🇹🇼 台灣', genre: 'Acoustic Pop / 民謠流行', highlight: '萬人大合唱預定！〈不是因為天氣晴朗才愛你〉溫暖包圍安平夜空', desc: '台灣超人氣溫暖系樂團，主唱雞丁極具感染力的清亮嗓音帶領全場樂迷齊聲高唱。' },
+      { id: 'd1-jian-6', day: 1, stage: 'jianshih', start: '20:20', end: '21:00', artist: 'NELL', origin: '🇰🇷 韓國', genre: 'Korean Modern Rock / 迷幻英搖', highlight: '韓國現代搖滾傳奇神團！〈聚集記憶的時間〉殿堂級聲光與催淚音牆', desc: '成軍超過二十年的韓國搖滾巨擘 NELL 親臨劍獅舞台，主唱金鍾萬空靈深邃的嗓音與頂級音場不容錯過。' },
+
+      // 3. 金鶴廳 Jin Ho Ting Stage (Day 1)
+      { id: 'd1-jin-1', day: 1, stage: 'jinhoting', start: '12:50', end: '13:30', artist: '溫室雜草 Easy Weeds', origin: '🇹🇼 台灣', genre: 'Garage Rock / Indie Rock', highlight: '抓耳吉他Riff與隨性衝浪搖擺感，金鶴廳午後最爽快的開場', desc: '帶有復古車庫搖滾與青春躁動感的樂團，現場演出自然奔放、律動感十足。' },
+      { id: 'd1-jin-2', day: 1, stage: 'jinhoting', start: '14:30', end: '15:10', artist: 'Laura day romance', origin: '🇯🇵 日本', genre: 'Japanese Indie Pop', highlight: '東京大勢清新獨立樂團！如日劇般透明感十足的雙吉他旋律', desc: '日本近年備受矚目的獨立流行樂團，主唱井上花月清澈溫柔的歌聲讓人一秒墜入夏日回憶。' },
+      { id: 'd1-jin-3', day: 1, stage: 'jinhoting', start: '16:10', end: '16:50', artist: 'Band Nah', origin: '🇰🇷 韓國', genre: 'Indie Rock / Pop Rock', highlight: '韓國人氣獨立搖滾樂團！直率熱血的Band Sound點燃午後氣氛', desc: '以真摯情感與充滿活力的現場演出在韓國弘大與各大音樂祭累積超高人氣。' },
+      { id: 'd1-jin-4', day: 1, stage: 'jinhoting', start: '17:50', end: '18:30', artist: '公館青少年 GGteens', origin: '🇹🇼 台灣', genre: 'Pop Rock / 青春搖滾', highlight: '大學世代共鳴度最高！男女雙主唱在晚霞時刻帶來滿滿青春能量', desc: '發跡於台北公館的新生代人氣樂團，旋律朗朗上口，現場氣氛歡樂熱烈。' },
+      { id: 'd1-jin-5', day: 1, stage: 'jinhoting', start: '19:30', end: '20:10', artist: '君島大空 (Ohzora Kimishima)', origin: '🇯🇵 日本', genre: 'Experimental Folk / Avant-Pop', highlight: '日本樂壇罕見的孤高音樂鬼才！細膩空靈假音與狂暴吉他交織的藝術品', desc: '備受日本音樂人推崇的創作奇才，融合纖細木吉他、前衛合成器與震撼人心的吉他獨奏。' },
+      { id: 'd1-jin-6', day: 1, stage: 'jinhoting', start: '21:10', end: '21:50', artist: '無妄合作社 No-nonsense Collective', origin: '🇹🇼 台灣', genre: 'Blues Rock / 迷幻車庫', highlight: 'Day 1 金鶴廳硬派壓軸！山頭與海邊交織的生猛搖滾氣味', desc: '金音獎最佳樂團得主，融合復古搖滾、藍調與雷鬼節奏，在深夜金鶴廳帶來最純粹的搖滾震撼。' },
+
+      // 4. 小嘻門 Xiao Si Men Stage (Day 1)
+      { id: 'd1-xiao-1', day: 1, stage: 'xiaosimen', start: '12:50', end: '13:30', artist: 'Vuize王鍾惟', origin: '🇹🇼 台灣', genre: '客語饒舌 / Hip-Hop', highlight: '金曲獎入圍新星！將客語韻律完美融入潮流節拍的絲滑現場', desc: '新生代極具辨識度的饒舌創作人，以鬆弛卻充滿力量的Flow為小嘻門揭開序幕。' },
+      { id: 'd1-xiao-2', day: 1, stage: 'xiaosimen', start: '14:30', end: '15:10', artist: '禁藥王 Asiaboy', origin: '🇹🇼 台灣', genre: 'Hardcore Trap / 街頭饒舌', highlight: '台饒最狠燥王回歸！超炸重低音Trap節拍讓小嘻門全場跳翻', desc: '以狂野直白的歌詞與極具煽動力的現場互動聞名，午後直接把小嘻門變成大型轟炸派對。' },
+      { id: 'd1-xiao-3', day: 1, stage: 'xiaosimen', start: '16:10', end: '16:50', artist: 'Andy Maker', origin: '🇹🇼 台灣 / 國際', genre: 'Groove / Hip-Hop / Soul', highlight: '節奏感拉滿的Groove律動，午後小嘻門最Chill的搖擺時光', desc: '融合嘻哈節拍與靈魂樂元素，帶來流暢耐聽的現場演出。' },
+      { id: 'd1-xiao-4', day: 1, stage: 'xiaosimen', start: '17:50', end: '18:30', artist: 'Multiverse Music', origin: '🇹🇼 台灣', genre: 'Hip-Hop Crew / Trap', highlight: '大嘻哈人氣廠牌全員出動！馬克、Macdella、EyeballRay 輪番開炸', desc: '來自中台灣的嘻哈戰隊 Multiverse，超強團魂與接力Cypher讓台下雙手舉高停不下來。' },
+      { id: 'd1-xiao-5', day: 1, stage: 'xiaosimen', start: '19:30', end: '20:10', artist: 'Srirajah Rockers ft. Leo王', origin: '🇹🇭 泰國 × 🇹🇼 台灣', genre: 'Roots Reggae / Dub / Hip-Hop', highlight: '神級跨國聯名！泰國傳奇雷鬼大團聯手金曲歌王 Leo王 微醺開唱', desc: '泰國最具指標性的雷鬼樂團 Srirajah Rockers 攜手鬼才金曲歌王 Leo王，在海風中打造最鬆弛迷幻的雷鬼嘻哈派對。' },
+      { id: 'd1-xiao-6', day: 1, stage: 'xiaosimen', start: '21:10', end: '21:50', artist: '0WAVE', origin: '🇰🇷 韓國', genre: 'K-R&B / Hip-Hop Collective', highlight: 'Day 1 小嘻門壓軸！韓國潮流R&B嘻哈團隊帶來最時髦的深夜律動', desc: '來自首爾的新銳音樂廠牌團隊 0WAVE，以極具質感的Melodic Rap與R&B旋律為小嘻門第一夜畫下句點。' },
+
+      // 5. 風獅 Fong Shih Stage (Day 1)
+      { id: 'd1-fong-1', day: 1, stage: 'fongshih', start: '12:00', end: '12:40', artist: '庸俗救星 Vulgar Savior', origin: '🇹🇼 台灣', genre: 'K-Indie / 都會成人抒情', highlight: 'Day 1 風獅舞台正午首發！微甜微苦的都會浪漫曲風準時開唱', desc: '融合韓系獨立流行、Funk與復古搖滾，主唱家耘極具感染力的聲線陪伴大家展開第一天。' },
+      { id: 'd1-fong-2', day: 1, stage: 'fongshih', start: '13:40', end: '14:20', artist: '薄暮 Evenfall', origin: '🇹🇼 台灣', genre: 'Djent / Modern Metalcore', highlight: '台中現代金屬核勁旅！精密重型低頻與清亮旋律交錯轟炸', desc: '展現高超樂器編曲與爆發力十足的嘶吼，金屬樂迷午後必衝現場。' },
+      { id: 'd1-fong-3', day: 1, stage: 'fongshih', start: '15:20', end: '16:00', artist: 'RIBINGU', origin: '🇯🇵 日本 / 亞洲', genre: 'Indie / Alternative', highlight: '清新別緻的獨立搖滾聲響，海邊草皮最舒服的午後陪伴', desc: '在風獅舞台帶來流暢抓耳的器樂編曲與迷人現場氛圍。' },
+      { id: 'd1-fong-4', day: 1, stage: 'fongshih', start: '17:00', end: '17:40', artist: '上山 Over The Mountain', origin: '🇹🇼 台灣', genre: '迷幻器樂 / Post-Rock', highlight: '正對17:15安平夕陽的器樂音牆！沉浸感滿分的日落魔幻時刻', desc: '以細膩器樂編曲與磅礴音場描繪自然山海意象，與觀夕平臺日落晚霞堪稱天作之合。' },
+      { id: 'd1-fong-5', day: 1, stage: 'fongshih', start: '18:40', end: '19:20', artist: '粉內 FenNei', origin: '🇹🇼 台灣', genre: 'Indie / Alternative Rock', highlight: '入夜海風中的另類搖滾律動，展現獨特音樂氣質', desc: '以充滿張力的編曲與真摯演出吸引眾多獨立樂迷駐足。' },
+      { id: 'd1-fong-6', day: 1, stage: 'fongshih', start: '20:20', end: '21:00', artist: 'Tickle Tickle 癢癢', origin: '🇹🇼 台灣', genre: 'Indie Pop / 怪奇輕快搖滾', highlight: '俏皮抓耳又充滿奇思妙想的編曲，夜晚草皮一起開心搖擺', desc: '以輕鬆幽默卻不失細膩的音樂語彙，為風獅舞台帶來充滿驚喜的夜晚。' },
+
+      // 6. 浪入塾 Ronin Cram School (Day 1)
+      { id: 'd1-ron-1', day: 1, stage: 'ronincram', start: '13:50', end: '14:30', artist: '音樂祭上台南不難：小尾巴 ft. 怡岑', origin: '🇹🇼 台灣', genre: 'Podcast 實境對談 × 漫才喜劇彈唱', highlight: '浪入塾爆笑開場！結合台南在地美食文化與怡岑超有梗的自彈自唱', desc: '在浪入塾吹冷氣聽最道地的台南音樂祭生存指南，歡笑聲保證不間斷。' },
+      { id: 'd1-ron-2', day: 1, stage: 'ronincram', start: '15:10', end: '16:00', artist: '反骨與狂氣：龐克與女團的異種格鬥 — 高小糕', origin: '🇹🇼 台灣', genre: '音樂講座 / 跨界對談', highlight: '白目樂隊主唱高小糕犀利開講！剖析暴烈龐克與偶像女團的極端美學', desc: '由台灣最具傳奇色彩的龐克女王高小糕主持，帶來尺度與深度兼具的精采講座。' },
+      { id: 'd1-ron-3', day: 1, stage: 'ronincram', start: '18:30', end: '19:30', artist: '倒車入庫 R.I.G × COMMON PEOPLE LIKE YOU', origin: '🇹🇼 台灣', genre: 'Garage Punk / Indie Rock 共演', highlight: '浪入塾夜間限定企劃！直球車庫龐克與獨立搖滾近距離對決', desc: '滿載生猛能量的雙團跨界合作，在浪入塾近距離感受汗水淋漓的搖滾現場。' },
+      { id: 'd1-ron-4', day: 1, stage: 'ronincram', start: '20:10', end: '21:10', artist: 'SADOG × ONE CLICK STRAIGHT', origin: '🇹🇼 台灣 × 🇵🇭 菲律賓', genre: 'Blues Punk × Synth Indie Rock', highlight: '跨國雙團炸裂合體！台灣龐克浪人 SADOG 聯手菲律賓人氣勁旅', desc: '浪入塾 Day 1 壓軸共演！融合車庫藍調龐克與菲律賓馬尼拉最潮獨立聲響的60分鐘特別舞台。' },
+
+      // 7. Red Bull LUKA (Day 1)
+      { id: 'd1-rb-1', day: 1, stage: 'redbull', start: '16:50', end: '17:50', artist: 'DJ Drug The Beat', origin: '🇹🇼 台灣', genre: 'DJ Set / Hip-Hop & Electronic', highlight: 'Red Bull LUKA 舞台日落派對啟動！連續60分鐘高能量混音', desc: '伴隨17點夕陽斜射，用最精準的節拍切換點燃 Red Bull LUKA 派對現場。' },
+      { id: 'd1-rb-2', day: 1, stage: 'redbull', start: '18:30', end: '19:30', artist: '安豬 ANJUWU', origin: '🇹🇼 台灣', genre: 'DJ Set / Party Groove', highlight: '超人氣派對 DJ 安豬登場！幽默選曲與超強控場讓全場嗨翻', desc: '跨越流派界線的驚喜混音，帶給樂迷最無拘無束的夜間海邊舞池體驗。' },
+      { id: 'd1-rb-3', day: 1, stage: 'redbull', start: '20:10', end: '21:10', artist: '高小糕', origin: '🇹🇼 台灣', genre: 'Punk / Electronic DJ Set', highlight: '日間開講、夜間化身電音女王！高小糕帶來最狂野的LUKA壓軸派對', desc: '融合搖滾態度與派對電音節拍，在 Red Bull LUKA 釋放毫無保留的狂暴魅力。' },
+
+
+      // ==================== DAY 2 (11.08 SUN) ====================
+      // 1. 鯤鯓 Kun Shen Stage (Day 2)
+      { id: 'd2-kun-0', day: 2, stage: 'kunshen', start: '11:10', end: '11:50', artist: '大象體操 ft. someshiit 山姆', origin: '🇹🇼 台灣', genre: 'Math Rock × 金音最佳新人饒舌', highlight: 'Day 2 早場 11:10 超神陣容！世界級數搖大象體操聯手山姆詩意饒舌', desc: '千萬別賴床！第二天一早11:10由享譽國際的大象體操攜手金音獎得主 someshiit 山姆在鯤鯓舞台震撼開場。' },
+      { id: 'd2-kun-1', day: 2, stage: 'kunshen', start: '12:50', end: '13:30', artist: '鄭宜農 Enno Cheng', origin: '🇹🇼 台灣', genre: '電子民謠 / 台語獨立', highlight: '金曲台語歌后！正午海風中用溫柔堅定的歌聲擁抱整片海岸', desc: '不斷突破框架的創作歌手，融合精緻合成器編曲與深刻詩意的詞作，現場極具感染力。' },
+      { id: 'd2-kun-2', day: 2, stage: 'kunshen', start: '14:30', end: '15:10', artist: '國蛋 GorDoN', origin: '🇹🇼 台灣', genre: 'Chill Hop / 顏社紙博士', highlight: '台南地主紙博士登上鯤鯓大舞台！午後最鬆弛微醺的萬人點頭現場', desc: '顏社靈魂人物、台南出身的國蛋回到家鄉主場，每一首經典Beat響起都是全場饒舌樂迷的朝聖時刻。' },
+      { id: 'd2-kun-3', day: 2, stage: 'kunshen', start: '16:10', end: '16:50', artist: '美秀集團 Amazing Show', origin: '🇹🇼 台灣', genre: '賽博台客搖滾', highlight: '炫砲自製樂器登場！《捲菸》《我要你愛》全場萬人跳動名場面', desc: '結合復古台味與實驗搖滾的超人氣樂團，現場視覺與音樂煽動力永遠是浪人祭最高潮。' },
+      { id: 'd2-kun-4', day: 2, stage: 'kunshen', start: '17:50', end: '18:30', artist: '孫淑媚', origin: '🇹🇼 台灣', genre: '台語金曲歌后 × 搖滾跨界', highlight: '台語金曲歌后驚喜降臨浪人祭！神級唱功結合Full Band震撼全場', desc: '橫跨影歌視三棲的金曲台語歌后孫淑媚登上鯤鯓舞台，經典台語金曲與當代搖滾編制碰撞出超乎想像的火花！' },
+      { id: 'd2-kun-5', day: 2, stage: 'kunshen', start: '19:30', end: '20:10', artist: '盧廣仲 Crowd Lu', origin: '🇹🇼 台灣', genre: 'Pop / Folk / 三金得主', highlight: '台南仁德之光回娘家壓軸！從《魚仔》到《刻在我心底的名字》萬人大合唱', desc: '史上最年輕三金得主盧廣仲回到故鄉台南！溫暖幽默的Talking與穿透夜空的歌聲，為鯤鯓舞台畫下最感動句點。' },
+
+      // 2. 劍獅 Jian Shih Stage (Day 2)
+      { id: 'd2-jian-1', day: 2, stage: 'jianshih', start: '12:00', end: '12:40', artist: '傷心欲絕 Wayne\'s So Sad', origin: '🇹🇼 台灣', genre: 'Punk / 民謠搖滾', highlight: '正午12點就開喝咆哮！台北暴烈魯蛇浪漫代表在烈日下直球對決', desc: '將失落與憤懣化為最真摯的搖滾詩篇，跟著許正泰與官靖剛在劍獅舞台大聲齊唱。' },
+      { id: 'd2-jian-2', day: 2, stage: 'jianshih', start: '13:40', end: '14:20', artist: '溫蒂漫步 ft. JABBERLOOP', origin: '🇹🇼 台灣 × 🇯🇵 日本', genre: 'Dream Pop × Club Jazz 跨國共演', highlight: '台日神仙合體！溫蒂漫步的浪漫合成器遇上日本傳奇爵士樂團狂野銅管', desc: '台灣當紅浪漫樂團溫蒂漫步攜手日本俱樂部爵士天團 JABBERLOOP，華麗薩克斯風與小號讓海邊瞬間沸騰！' },
+      { id: 'd2-jian-3', day: 2, stage: 'jianshih', start: '15:20', end: '16:00', artist: '我是機車少女 I\'mdifficult', origin: '🇹🇼 台灣', genre: 'Experimental Pop / Neo-Soul', highlight: '金音獎肯定前衛實驗樂團！豐富合聲與律動感令人驚艷', desc: '融合實驗波普、R&B與爵士律動的台灣代表性新銳樂團，編曲充滿驚喜轉折。' },
+      { id: 'd2-jian-4', day: 2, stage: 'jianshih', start: '17:00', end: '17:40', artist: 'A_Root同根生 × 三牲獻藝 ft. 柔米', origin: '🇹🇼 台灣', genre: '民俗國樂 × 電音廟會 × 民謠女聲', highlight: '夕陽時分最魔性的神仙妖怪大派對！三大金曲金音得主史詩級合體', desc: '同根生的笙與嗩吶、三牲獻藝的台灣廟會電子低頻，加上柔米極具韻味的嗓音，打造浪人祭絕無僅有的跨界大秀！' },
+      { id: 'd2-jian-5', day: 2, stage: 'jianshih', start: '18:40', end: '19:20', artist: 'coldrain', origin: '🇯🇵 日本', genre: 'Post-Hardcore / Loud Rock', highlight: '日本重型搖滾霸主降臨劍獅！《炎炎消防隊》《咒術迴戰》神曲全場暴動開圈', desc: '主唱 Masato 兼具爆發力極強的嘶吼與極致穿透力清腔，世界級金屬核音牆直接把安平草皮炸翻！' },
+      { id: 'd2-jian-6', day: 2, stage: 'jianshih', start: '20:20', end: '21:20', artist: '落日飛車 Sunset Rollercoaster', origin: '🇹🇼 台灣', genre: 'Romantic Synth / City Pop', highlight: '長達60分鐘專場級壓軸！在安平海風與夜色中沉醉於世界級浪漫音浪', desc: '20:20 - 21:20 整整一小時！金曲最佳樂團落日飛車在劍獅舞台帶來最微醺迷人的閉幕演出。' },
+
+      // 3. 金鶴廳 Jin Ho Ting Stage (Day 2)
+      { id: 'd2-jin-0', day: 2, stage: 'jinhoting', start: '11:10', end: '11:50', artist: '永井琳子 (Rinko Nagai)', origin: '🇯🇵 日本', genre: 'Japanese Folk / Acoustic', highlight: 'Day 2 早場金鶴廳清新之聲！澄澈透明的日系木吉他彈唱喚醒早晨', desc: '11:10 於金鶴廳溫柔開唱，如晨光般乾淨純粹的嗓音陪伴早鳥樂迷展開美好的一天。' },
+      { id: 'd2-jin-1', day: 2, stage: 'jinhoting', start: '12:50', end: '13:30', artist: '椅子樂團 The Chairs', origin: '🇹🇼 台灣', genre: 'Indie Pop / 60s Retro Folk', highlight: '金曲最佳演唱組合！〈Rollin\' On〉一響起全場跟著海風搖擺', desc: '充滿復古浪漫情懷與多聲部絕美和聲的椅子樂團，是午後浪人祭最療癒的風景。' },
+      { id: 'd2-jin-2', day: 2, stage: 'jinhoting', start: '14:30', end: '15:10', artist: 'DSPS', origin: '🇹🇼 台灣', genre: 'Indie Rock / Math Folk', highlight: '稔文細膩溫柔的歌聲與精巧變拍吉他，道盡日常裡的微小感動', desc: '深受台日樂迷喜愛的台北獨立樂團，清透的器樂編排與詩意歌詞直抵人心。' },
+      { id: 'd2-jin-3', day: 2, stage: 'jinhoting', start: '16:10', end: '16:50', artist: '呂允 Lu Yun', origin: '🇹🇼 台灣', genre: 'Singer-Songwriter / Pop Folk', highlight: '備受矚目的新生代寶藏創作才子！真摯歌聲與溫暖旋律圈粉無數', desc: '擁有細膩詞曲創作力與溫暖嗓音的新銳音樂人，在午後金鶴廳帶來最貼近心房的演出。' },
+      { id: 'd2-jin-4', day: 2, stage: 'jinhoting', start: '17:50', end: '18:30', artist: 'OGRE YOU ASSHOLE', origin: '🇯🇵 日本', genre: 'Krautrock / Psychedelic Rock', highlight: '日本殿堂級另類迷幻名團！催眠般的Minimal律動在黃昏帶領全場神遊', desc: '日本富士搖滾常客，精密重複的Groove與空間感極強的吉他音色令人完全著迷。' },
+      { id: 'd2-jin-5', day: 2, stage: 'jinhoting', start: '19:30', end: '20:10', artist: 'Milena', origin: '🇰🇷 韓國', genre: 'K-R&B / Jazz / Singer-Songwriter', highlight: '韓國浪漫廠牌 wave to earth 同門才女！絲絨般慵懶爵士R&B嗓音', desc: '兼具小提琴與詞曲製作才華的韓國創作女聲 Milena，在微涼夜晚帶來極致浪漫的韓系微醺氛圍。' },
+
+      // 4. 小嘻門 Xiao Si Men Stage (Day 2)
+      { id: 'd2-xiao-0', day: 2, stage: 'xiaosimen', start: '11:10', end: '11:50', artist: 'ana', origin: '🇹🇼 台灣 / 亞洲', genre: 'R&B / Melodic Hip-Hop', highlight: 'Day 2 早場小嘻門 11:10 開演！輕盈迷人的旋律律動開啟第二天', desc: '以獨特聲線與流暢節拍在週日上午為小嘻門注入滿滿清新能量。' },
+      { id: 'd2-xiao-1', day: 2, stage: 'xiaosimen', start: '12:50', end: '13:30', artist: '袁語笙', origin: '🇹🇼 台灣', genre: 'Urban / R&B / Pop', highlight: '極具穿透力的靈魂嗓音與當代節奏藍調律動', desc: '在小嘻門正午時段展現細膩唱功與流暢Groove。' },
+      { id: 'd2-xiao-2', day: 2, stage: 'xiaosimen', start: '14:30', end: '15:10', artist: 'ผ้าอ้อม99999 (Paoom99999)', origin: '🇹🇭 泰國', genre: 'Thai Hip-Hop / Alternative Rap', highlight: '來自泰國的新銳潮流饒舌勢力！泰式獨特韻律與超Chill節拍', desc: '展現東南亞當代獨立嘻哈的生猛創意與熱帶派對氣息。' },
+      { id: 'd2-xiao-3', day: 2, stage: 'xiaosimen', start: '16:10', end: '16:50', artist: 'C.Holly', origin: '🇹🇼 台灣', genre: 'Femme Fatale Rap / Hip-Hop', highlight: '狠辣帥氣的女力饒舌代表！超強氣場與快嘴Flow震撼小嘻門', desc: '兼具舞台魅力與紮實饒舌實力的 C.Holly，帶來態度滿點的火熱演出。' },
+      { id: 'd2-xiao-4', day: 2, stage: 'xiaosimen', start: '17:50', end: '18:30', artist: 'YaMon Social Club 壓滿俱樂部', origin: '🇹🇼 台灣', genre: 'Reggae / Ska / Dub Party', highlight: '夕陽下最鬆的雷鬼派對俱樂部！拿著啤酒隨著Skank節拍搖擺', desc: '將牙買加雷鬼、Dub與海邊派對精神完美融合，與浪人祭海灘氛圍百分之百絕配。' },
+      { id: 'd2-xiao-5', day: 2, stage: 'xiaosimen', start: '19:30', end: '20:10', artist: 'Azikazin Magic World', origin: '🇰🇷 韓國 / 國際', genre: 'Experimental Hip-Hop / Electro', highlight: '奇幻魔性節拍世界！打破常規的另類嘻哈與電子律動', desc: '小嘻門 Day 2 夜間壓軸，帶來充滿未來感與塗鴉街頭精神的迷幻派對。' },
+
+      // 5. 風獅 Fong Shih Stage (Day 2)
+      { id: 'd2-fong-1', day: 2, stage: 'fongshih', start: '12:00', end: '12:40', artist: '白頻率 White Frequency', origin: '🇹🇼 台灣', genre: 'Alternative Rock / Post-Punk', highlight: '充滿爆發力的女主唱聲線與厚實吉他音牆，正午強勢醒腦', desc: '以直接深刻的情緒張力與流暢搖滾編曲在風獅舞台展開第二天行程。' },
+      { id: 'd2-fong-2', day: 2, stage: 'fongshih', start: '13:40', end: '14:20', artist: '好日 HoNi', origin: '🇹🇼 台灣', genre: '台語民謠搖滾 / Indie Folk', highlight: '溫暖療癒的母語創作，如南國暖陽般照亮午後草皮', desc: '融合傳統土地情感與現代獨立民謠編曲，帶來最真誠動人的現場。' },
+      { id: 'd2-fong-3', day: 2, stage: 'fongshih', start: '15:20', end: '16:00', artist: 'Iga Nana', origin: '🇯🇵 日本 / 亞洲', genre: 'Indie Pop / Singer-Songwriter', highlight: '午後微風中的清新旋律，近距離感受細膩動人的演出', desc: '在風獅舞台以輕快節奏與溫暖歌聲陪伴樂迷度過愜意下午。' },
+      { id: 'd2-fong-4', day: 2, stage: 'fongshih', start: '17:00', end: '17:40', artist: '普通隊長 Captain Ordinary', origin: '🇹🇼 台灣', genre: 'Pop Punk / Emo Rock', highlight: '直率熱血的青春龐克！在17:00夕陽下一起大聲合唱揮灑汗水', desc: '充滿共鳴的日常歌詞與疾走感十足的龐克節奏，現場氣氛熱血沸騰。' },
+      { id: 'd2-fong-5', day: 2, stage: 'fongshih', start: '18:40', end: '19:20', artist: '貓膽汁 CAT\'S BILE', origin: '🇹🇼 台灣', genre: 'Grunge / Alternative Rock', highlight: '生猛迷幻的油漬搖滾能量，夜幕低垂時分的狂放宣洩', desc: '帶有強烈90年代Grunge與另類搖滾色彩，現場張力十足。' },
+      { id: 'd2-fong-6', day: 2, stage: 'fongshih', start: '20:20', end: '21:00', artist: 'INFERNAL CHAOS', origin: '🇹🇼 台灣', genre: 'Melodic Death / Thrash Metal', highlight: 'Day 2 風獅壓軸重金屬轟炸！高速雙踏與狂暴吉他Riff徹底釋放體力', desc: '台灣實力派重金屬樂團，在風獅舞台最後一棒帶來最純粹兇猛的金屬現場！' },
+
+      // 6. 浪入塾 Ronin Cram School (Day 2)
+      { id: 'd2-ron-1', day: 2, stage: 'ronincram', start: '13:30', end: '14:20', artist: '永續離開計畫：童話裡都是騙人的 Nana&Eddie × A_Root同根生 智博&小綠', origin: '🇹🇼 台灣', genre: '跨界Podcast對談 / 綠色永續講座', highlight: '人氣Podcaster聯手同根生團員！暢談音樂祭永續環保與荒謬日常', desc: '在浪入塾結合知性議題與爆笑跨界對談，聽團之餘也能收穫滿滿笑聲與觀點。' },
+      { id: 'd2-ron-2', day: 2, stage: 'ronincram', start: '15:10', end: '16:00', artist: 'Action!駐唱老ム帶你上鏡頭演戲！— 肚肚(陳彥壯)', origin: '🇹🇼 台灣', genre: '喜劇互動工作坊 / 脫口秀講座', highlight: '喜劇鬼才陳彥壯（肚肚）爆笑開課！全場互動笑到肚子痛', desc: '結合即興戲劇、駐唱文化與單口喜劇節奏，浪入塾下午最歡樂的互動現場。' },
+      { id: 'd2-ron-3', day: 2, stage: 'ronincram', start: '18:30', end: '19:30', artist: 'Robot Swing (¾ trio) × JABBERLOOP', origin: '🇹🇼 台灣 × 🇯🇵 日本', genre: 'Jazz Fusion / Neo-Soul × Club Jazz', highlight: '神仙打架級樂手即興共演！台灣技術流新星聯手日本傳奇爵士銅管天團', desc: '金音獎常勝軍 Robot Swing 與日本 JABBERLOOP 在浪入塾展開長達60分鐘的超絕技巧即興Jam，樂手控絕對必看！' },
+      { id: 'd2-ron-4', day: 2, stage: 'ronincram', start: '20:30', end: '21:30', artist: 'VOOID × ZAZEN BOYS', origin: '🇹🇼 台灣 × 🇯🇵 日本', genre: 'Psychedelic Indie × 傳奇Post-Punk/Math', highlight: '全場最傳奇神級壓軸共演！透明雜誌洪申豪 VOOID 合體日本向井秀德 ZAZEN BOYS！', desc: '20:30 - 21:30 史詩級一小時！台灣獨立指標洪申豪領軍的 VOOID 與日本搖滾大神向井秀德（Number Girl / ZAZEN BOYS）同台交鋒，堪稱2026浪人祭最具歷史意義的夢幻現場！' },
+
+      // 7. Red Bull LUKA (Day 2)
+      { id: 'd2-rb-1', day: 2, stage: 'redbull', start: '16:50', end: '17:50', artist: '馬摳 (DJ Mako)', origin: '🇹🇼 台灣', genre: 'DJ Set / Sunset Groove', highlight: 'Red Bull LUKA 夕陽時段派對掌舵手！伴隨海風微醺起舞', desc: '以精選Groove與流暢接歌陪伴大家迎接第二天最美的日落時刻。' },
+      { id: 'd2-rb-2', day: 2, stage: 'redbull', start: '18:30', end: '19:30', artist: 'YΣNBøï', origin: '🇹🇼 台灣', genre: 'Electronic / Bass / DJ Set', highlight: '前衛電子低頻與潮流節拍衝擊，越夜越嗨的能量場', desc: '在 Red Bull LUKA 舞台帶來極具現代感與爆發力的60分鐘電音Set。' },
+      { id: 'd2-rb-3', day: 2, stage: 'redbull', start: '20:10', end: '21:10', artist: '官靖剛', origin: '🇹🇼 台灣', genre: 'Rock / Indie Disco DJ Set', highlight: '傷心欲絕吉他手化身派對DJ！最懂聽團仔口味的搖滾金曲大放送', desc: '由傷心欲絕吉他手官靖剛坐鎮 Red Bull LUKA 壓軸時段，用最對味的搖滾與派對選曲陪大家狂歡到最後！' }
+    ];
+
+    const USER_COLORS = ['#06b6d4', '#ec4899', '#10b981', '#f59e0b', '#a855f7', '#3b82f6', '#f43f5e', '#84cc16'];
+    const USER_AVATARS = ['🙋‍♂️', '🎸', '🦌', '🍺', '😎', '👩‍🎤', '🦊', '🏄', '🤠', '🎧', '🌊', '🔥'];
+    const STORAGE_KEY = 'vagabond2026_schedule_v1';
+
+    let state = {
+      currentDay: 1,
+      currentView: 'grid',
+      pxPerMin: 2.6,
+      filterOnlySelected: false,
+      filterShowFriends: true,
+      searchQuery: '',
+      activeUserId: null,
+      newUserAvatar: '😎',
+      newUserColor: '#f59e0b',
+      users: []
+    };
+
+    /********************************************************************
+     * 2. LOCAL STORAGE PERSISTENCE (PURE STATIC, NO BACKEND)
+     ********************************************************************/
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Normalizes user data from localStorage or a share URL so it is safe to render.
+    function sanitizeUsers(list) {
+      if (!Array.isArray(list)) return [];
+      const validShowIds = new Set(SHOWS.map(s => s.id));
+      const seenIds = new Set();
+      return list
+        .filter(u => u && typeof u.name === 'string' && u.name.trim())
+        .map((u, i) => {
+          let id = typeof u.id === 'string' && /^[\w-]{1,64}$/.test(u.id) ? u.id : `u_${Date.now()}_${i}`;
+          if (seenIds.has(id)) id = `u_${Date.now()}_${i}`;
+          seenIds.add(id);
+          return {
+            id,
+            name: u.name.trim().slice(0, 30),
+            avatar: USER_AVATARS.includes(u.avatar) ? u.avatar : '🎧',
+            color: /^#[0-9a-fA-F]{6}$/.test(u.color) ? u.color : USER_COLORS[i % USER_COLORS.length],
+            picks: Array.isArray(u.picks) ? [...new Set(u.picks.filter(p => validShowIds.has(p)))] : [],
+            updatedAt: typeof u.updatedAt === 'string' ? u.updatedAt.slice(0, 40) : ''
+          };
+        });
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          users: state.users,
+          activeUserId: state.activeUserId
+        }));
+      } catch (e) {
+        console.warn('localStorage save failed:', e);
+        showToast('⚠️ 無法儲存至瀏覽器（可能為無痕模式或儲存空間已滿）');
+      }
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          state.users = sanitizeUsers(saved.users);
+          state.activeUserId = saved.activeUserId;
+        }
+      } catch (e) {
+        console.warn('localStorage load failed:', e);
+      }
+      ensureActiveUser();
+      importFromShareHash();
+    }
+
+    function importFromShareHash() {
+      const match = window.location.hash.match(/^#(?:share|cloud)=(.+)$/);
+      if (!match) return;
+      try {
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(match[1]))));
+        const imported = sanitizeUsers(decoded);
+        if (imported.length === 0) throw new Error('empty share data');
+        const ok = state.users.length === 0 ||
+          confirm(`分享網址中有 ${imported.length} 位成員的紀錄。\n要用它取代目前瀏覽器中的 ${state.users.length} 位成員紀錄嗎？`);
+        if (ok) {
+          state.users = imported;
+          state.activeUserId = imported[0].id;
+          saveState();
+          setTimeout(() => showToast(`🔗 已匯入分享網址中的 ${imported.length} 位成員紀錄！`), 0);
+        }
+      } catch (e) {
+        console.warn('Share hash parse error:', e);
+        setTimeout(() => showToast('⚠️ 分享網址格式錯誤，無法匯入'), 0);
+      }
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
+    function ensureActiveUser() {
+      if (!state.users.some(u => u.id === state.activeUserId)) {
+        state.activeUserId = state.users.length > 0 ? state.users[0].id : null;
+      }
+    }
+
+    function getActiveUser() {
+      return state.users.find(u => u.id === state.activeUserId) || state.users[0] || null;
+    }
+
+    function nowLabel() {
+      return new Date().toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    window.deleteUser = function(userId) {
+      const target = state.users.find(u => u.id === userId);
+      if (!target) return;
+      if (!confirm(`確定要刪除成員「${target.name}」及其所有勾選紀錄嗎？`)) return;
+      state.users = state.users.filter(u => u.id !== userId);
+      ensureActiveUser();
+      saveState();
+      renderAll();
+      showToast(`🗑️ 已刪除成員「${target.name}」`);
+    };
+
+    /********************************************************************
+     * 3. TIME HELPER & CLASH DETECTION FUNCTIONS
+     ********************************************************************/
+    const START_HOUR = 11; // 11:00 is 0 min offset (supports Day 2 11:10 AM early shows!)
+
+    function timeToMinutes(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function minutesFromStart(timeStr) {
+      return timeToMinutes(timeStr) - (START_HOUR * 60);
+    }
+
+    function isOverlapping(showA, showB) {
+      if (showA.id === showB.id || showA.day !== showB.day) return false;
+      const startA = timeToMinutes(showA.start);
+      const endA   = timeToMinutes(showA.end);
+      const startB = timeToMinutes(showB.start);
+      const endB   = timeToMinutes(showB.end);
+      return startA < endB && startB < endA;
+    }
+
+    function getUserClashes(user, dayFilter = null) {
+      if (!user) return { clashes: [], clashingShowIds: new Set() };
+      const pickedShows = SHOWS.filter(s => user.picks.includes(s.id) && (dayFilter ? s.day === dayFilter : true));
+      const clashes = [];
+      const clashingShowIds = new Set();
+
+      for (let i = 0; i < pickedShows.length; i++) {
+        for (let j = i + 1; j < pickedShows.length; j++) {
+          const a = pickedShows[i];
+          const b = pickedShows[j];
+          if (isOverlapping(a, b)) {
+            const overlapStart = Math.max(timeToMinutes(a.start), timeToMinutes(b.start));
+            const overlapEnd   = Math.min(timeToMinutes(a.end), timeToMinutes(b.end));
+            clashes.push({
+              showA: a,
+              showB: b,
+              overlapMins: overlapEnd - overlapStart
+            });
+            clashingShowIds.add(a.id);
+            clashingShowIds.add(b.id);
+          }
+        }
+      }
+      return { clashes, clashingShowIds };
+    }
+
+    /********************************************************************
+     * 4. RENDERING: USER CHIPS & HEADER STATS
+     ********************************************************************/
+    function renderUserBar() {
+      const container = document.getElementById('user-chips-container');
+      const activeUser = getActiveUser();
+      const { clashes } = getUserClashes(activeUser, state.currentDay);
+      document.getElementById('btn-delete-user').classList.toggle('hidden', !activeUser);
+
+      if (state.users.length === 0) {
+        container.innerHTML = '<span class="text-xs text-amber-300">尚未建立任何成員，請先點擊「+ 新增團友」開始紀錄</span>';
+      } else container.innerHTML = state.users.map(u => {
+        const isActive = u.id === activeUser.id;
+        const dayCount = SHOWS.filter(s => s.day === state.currentDay && u.picks.includes(s.id)).length;
+        return `
+          <button onclick="switchUser('${u.id}')" class="px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+            isActive 
+              ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 ring-2 ring-white/40' 
+              : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700'
+          }">
+            <span>${u.avatar}</span>
+            <span>${escapeHtml(u.name)}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-slate-950/30 text-slate-950 font-black' : 'bg-slate-950 text-cyan-400'}">${dayCount}</span>
+          </button>
+        `;
+      }).join('');
+
+      const dayPicksCount = activeUser ? SHOWS.filter(s => s.day === state.currentDay && activeUser.picks.includes(s.id)).length : 0;
+      document.getElementById('current-user-count').textContent = `${dayPicksCount} 場`;
+      document.getElementById('current-clash-count').textContent = `${clashes.length} 處`;
+    }
+
+    window.switchUser = function(userId) {
+      state.activeUserId = userId;
+      saveState();
+      renderAll();
+    };
+
+    /********************************************************************
+     * 5. RENDERING: 2D PROPORTIONAL TIMETABLE GRID
+     ********************************************************************/
+    function renderProportionalGrid() {
+      const pxPerMin = state.pxPerMin;
+      const totalMins = 660; // 11:00 to 22:00 = 11 hours = 660 mins
+      const totalHeight = totalMins * pxPerMin;
+
+      const bodyContainer = document.getElementById('timetable-body-container');
+      bodyContainer.style.height = `${totalHeight}px`;
+
+      // 1. Render Stage Headers
+      const stageHeaders = document.getElementById('timetable-stage-headers');
+      stageHeaders.innerHTML = STAGES.map(st => `
+        <div class="py-2.5 px-2 text-center flex flex-col items-center justify-center relative overflow-hidden">
+          <div class="absolute top-0 left-0 right-0 h-1.5" style="background:${st.color}"></div>
+          <div class="text-sm sm:text-base font-black text-white tracking-wider">${st.name}</div>
+          <div class="text-[10px] font-mono-time text-slate-400 leading-tight">${st.sub}</div>
+        </div>
+      `).join('');
+
+      // 2. Render Left Time Axis & Horizontal Grid Lines
+      const timeAxis = document.getElementById('timetable-time-axis');
+      const gridLines = document.getElementById('timetable-grid-lines');
+      let axisHtml = '';
+      let linesHtml = '';
+
+      for (let m = 0; m <= totalMins; m += 30) {
+        const topPx = m * pxPerMin;
+        const hr = Math.floor((START_HOUR * 60 + m) / 60);
+        const min = (START_HOUR * 60 + m) % 60;
+        const timeLabel = `${String(hr).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+        const isHour = min === 0;
+
+        axisHtml += `
+          <div class="absolute left-0 right-0 pr-2 text-right font-mono-time ${isHour ? 'text-xs font-bold text-slate-200' : 'text-[10px] text-slate-500'}" style="top: ${Math.max(2, topPx - 8)}px;">
+            ${timeLabel}
+          </div>
+        `;
+
+        linesHtml += `
+          <div class="time-grid-line ${isHour ? 'major' : ''}" style="top: ${topPx}px;"></div>
+        `;
+      }
+
+      // Add Sunset Magic Hour Band (17:15 - 17:45 => 375m to 405m from 11:00)
+      const sunsetTop = minutesFromStart('17:15') * pxPerMin;
+      const sunsetHeight = 30 * pxPerMin;
+      linesHtml += `
+        <div class="sunset-band flex items-center justify-end pr-3" style="top: ${sunsetTop}px; height: ${sunsetHeight}px;">
+          <span class="text-[10px] font-bold text-amber-300/90 bg-slate-950/80 px-2 py-0.5 rounded border border-amber-500/30">
+            🌅 17:15 - 17:45 安平落日魔幻時刻
+          </span>
+        </div>
+      `;
+
+      timeAxis.innerHTML = axisHtml;
+      gridLines.innerHTML = linesHtml;
+
+      // 3. Render Shows inside each Stage Column
+      const activeUser = getActiveUser();
+      const { clashingShowIds } = getUserClashes(activeUser, state.currentDay);
+      const q = state.searchQuery.trim().toLowerCase();
+
+      const columnsContainer = document.getElementById('timetable-stage-columns');
+      columnsContainer.innerHTML = STAGES.map(stage => {
+        const stageShows = SHOWS.filter(s => s.day === state.currentDay && s.stage === stage.id);
+
+        const blocksHtml = stageShows.map(show => {
+          const startMin = minutesFromStart(show.start);
+          const endMin   = minutesFromStart(show.end);
+          const duration = endMin - startMin;
+          const topPx    = startMin * pxPerMin + 2;
+          const heightPx = duration * pxPerMin - 4;
+
+          const isSelectedByActive = !!activeUser && activeUser.picks.includes(show.id);
+          const isClashing = clashingShowIds.has(show.id);
+
+          const allPickers   = state.users.filter(u => u.picks.includes(show.id));
+
+          // Filter dimming logic
+          let isDimmed = false;
+          if (q && !show.artist.toLowerCase().includes(q) && !show.genre.toLowerCase().includes(q)) {
+            isDimmed = true;
+          }
+          if (state.filterOnlySelected && !isSelectedByActive) {
+            isDimmed = true;
+          }
+
+          return `
+            <div onclick="toggleShowPick('${show.id}', event)"
+                 class="show-block p-2 flex flex-col justify-between select-none ${isSelectedByActive ? 'selected-mine' : ''} ${isClashing ? 'clash-mine' : ''} ${isDimmed ? 'opacity-25 hover:opacity-90' : ''}"
+                 style="top: ${topPx}px; height: ${heightPx}px; background: ${isSelectedByActive ? 'linear-gradient(135deg, rgba(14, 116, 144, 0.85), rgba(15, 23, 42, 0.95))' : '#111c35'}; border-left: 4px solid ${stage.color}; border-top: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08);">
+              
+              <!-- Top Row: Time + Info Button -->
+              <div>
+                <div class="flex items-center justify-between gap-1">
+                  <span class="font-mono-time text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-950/80 text-slate-300">
+                    ${show.start}-${show.end}
+                  </span>
+                  <div class="flex items-center gap-1">
+                    ${isClashing ? '<span title="時段衝堂！" class="text-[11px]">⚠️</span>' : ''}
+                    ${isSelectedByActive ? '<span class="text-cyan-300 text-xs font-black">★</span>' : ''}
+                    <button onclick="openArtistModal('${show.id}', event)" class="w-5 h-5 rounded-full bg-slate-800/90 hover:bg-slate-600 text-slate-300 hover:text-white text-[10px] font-bold flex items-center justify-center transition" title="查看樂團介紹與團友選擇">
+                      ⓘ
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Artist Name -->
+                <div class="font-black text-xs sm:text-sm text-white leading-snug mt-1 line-clamp-2">
+                  ${show.artist}
+                </div>
+                <div class="text-[10px] text-slate-400 truncate mt-0.5">
+                  ${show.origin} · ${show.genre}
+                </div>
+              </div>
+
+              <!-- Bottom Row: Group Member Badges -->
+              <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-800/60">
+                <div class="flex items-center -space-x-1 overflow-hidden">
+                  ${state.filterShowFriends && allPickers.length > 0 ? allPickers.map(u => `
+                    <span title="${escapeHtml(u.name)} 想看" class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ring-1 ring-slate-950" style="background:${u.color}; color:#020617;">
+                      ${u.avatar}
+                    </span>
+                  `).join('') : '<span class="text-[10px] text-slate-500">點擊選取</span>'}
+                </div>
+                ${allPickers.length > 1 ? `<span class="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-1.5 rounded">${allPickers.length}人同行</span>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `<div class="relative h-full hover:bg-slate-900/20 transition">${blocksHtml}</div>`;
+      }).join('');
+    }
+
+    /********************************************************************
+     * 6. RENDERING: MULTI-USER COMPARISON MATRIX VIEW
+     ********************************************************************/
+    function renderComparisonView() {
+      document.getElementById('compare-day-badge').textContent = state.currentDay === 1 ? 'DAY 1 (11/07 六)' : 'DAY 2 (11/08 日)';
+      const onlyPicked = document.getElementById('chk-compare-only-picked').checked;
+
+      // Render Table Header
+      const thead = document.getElementById('compare-table-head');
+      thead.innerHTML = `
+        <th class="py-3 px-4 w-28">演出時間</th>
+        <th class="py-3 px-4 w-32">舞台</th>
+        <th class="py-3 px-4">演出樂團</th>
+        ${state.users.map(u => `
+          <th class="py-3 px-3 text-center w-28" style="border-bottom: 2px solid ${u.color}">
+            <div class="flex flex-col items-center">
+              <span class="text-sm">${u.avatar}</span>
+              <span class="text-white font-bold">${escapeHtml(u.name)}</span>
+            </div>
+          </th>
+        `).join('')}
+        <th class="py-3 px-4 text-center w-24">揪團熱度</th>
+      `;
+
+      // Sort Day Shows chronologically
+      let dayShows = SHOWS.filter(s => s.day === state.currentDay).sort((a, b) => {
+        const diff = timeToMinutes(a.start) - timeToMinutes(b.start);
+        return diff !== 0 ? diff : a.stage.localeCompare(b.stage);
+      });
+
+      if (onlyPicked) {
+        dayShows = dayShows.filter(s => state.users.some(u => u.picks.includes(s.id)));
+      }
+
+      const tbody = document.getElementById('compare-table-body');
+      if (dayShows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${state.users.length + 4}" class="py-8 text-center text-slate-500">目前沒有符合篩選條件的場次</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = dayShows.map(show => {
+        const st = STAGES.find(x => x.id === show.stage);
+        const pickCount = state.users.filter(u => u.picks.includes(show.id)).length;
+
+        return `
+          <tr class="hover:bg-slate-800/50 transition ${pickCount >= 2 ? 'bg-cyan-950/20' : ''}">
+            <td class="py-2.5 px-4 font-mono-time text-xs text-slate-300 whitespace-nowrap">${show.start} - ${show.end}</td>
+            <td class="py-2.5 px-4 whitespace-nowrap">
+              <span class="px-2 py-0.5 rounded text-xs font-bold text-white" style="background:${st.color}">${st.short}</span>
+            </td>
+            <td class="py-2.5 px-4">
+              <div class="font-bold text-white cursor-pointer hover:text-cyan-400" onclick="openArtistModal('${show.id}', event)">${show.artist}</div>
+              <div class="text-[11px] text-slate-400">${show.origin} · ${show.genre}</div>
+            </td>
+            ${state.users.map(u => {
+              const picked = u.picks.includes(show.id);
+              return `
+                <td class="py-2.5 px-3 text-center">
+                  <button onclick="toggleUserShowPick('${u.id}', '${show.id}')" class="w-8 h-8 rounded-xl font-bold transition inline-flex items-center justify-center ${
+                    picked ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50' : 'bg-slate-950 text-slate-600 hover:text-slate-400 border border-slate-800'
+                  }">
+                    ${picked ? '✔' : '+'}
+                  </button>
+                </td>
+              `;
+            }).join('')}
+            <td class="py-2.5 px-4 text-center">
+              ${pickCount > 0 
+                ? `<span class="px-2 py-0.5 rounded-full text-xs font-bold ${pickCount >= 2 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-800 text-slate-300'}">${pickCount} 人想看</span>` 
+                : '<span class="text-xs text-slate-600">-</span>'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    /********************************************************************
+     * 7. RENDERING: PERSONAL SCHEDULE & CLASH SOLVER
+     ********************************************************************/
+    function renderPersonalView() {
+      const user = getActiveUser();
+      if (!user) {
+        document.getElementById('personal-user-title').textContent = '尚未建立成員';
+        document.getElementById('personal-count-badge').textContent = '0 場演出';
+        const badge = document.getElementById('personal-clash-badge');
+        badge.textContent = '0 處衝堂';
+        badge.className = 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold';
+        document.getElementById('personal-timeline-list').innerHTML = '<div class="p-8 text-center text-slate-400 text-sm bg-slate-950 rounded-xl border border-slate-800">尚未建立任何成員，請先點擊上方「+ 新增團友」。</div>';
+        document.getElementById('personal-clash-list').innerHTML = '';
+        return;
+      }
+      document.getElementById('personal-user-title').textContent = user.name;
+
+      const myShows = SHOWS.filter(s => s.day === state.currentDay && user.picks.includes(s.id))
+                           .sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+
+      const { clashes, clashingShowIds } = getUserClashes(user, state.currentDay);
+
+      document.getElementById('personal-count-badge').textContent = `${myShows.length} 場演出`;
+      const clashBadge = document.getElementById('personal-clash-badge');
+      clashBadge.textContent = `${clashes.length} 處衝堂`;
+      clashBadge.className = clashes.length > 0
+        ? 'text-xs px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 font-bold'
+        : 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold';
+
+      const listEl = document.getElementById('personal-timeline-list');
+      if (myShows.length === 0) {
+        listEl.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm bg-slate-950 rounded-xl border border-slate-800">尚未在 DAY ${state.currentDay} 勾選任何演出，請前往「2D 時間軸總表」點選想看的樂團！</div>`;
+      } else {
+        listEl.innerHTML = myShows.map((show, idx) => {
+          const st = STAGES.find(x => x.id === show.stage);
+          const hasClash = clashingShowIds.has(show.id);
+          const companions = state.users.filter(u => u.id !== user.id && u.picks.includes(show.id));
+
+          let gapNote = '';
+          if (idx > 0) {
+            const prev = myShows[idx - 1];
+            const diff = timeToMinutes(show.start) - timeToMinutes(prev.end);
+            if (diff < 0) {
+              gapNote = `<div class="text-xs text-red-400 font-bold py-1 pl-4 border-l-2 border-red-500">⚠️ 與上一場重疊 ${Math.abs(diff)} 分鐘！</div>`;
+            } else if (diff === 0) {
+              gapNote = `<div class="text-xs text-amber-300 py-1 pl-4 border-l-2 border-amber-500">⚡ 無縫接軌換場（建議提早 3 分鐘移動）</div>`;
+            } else {
+              gapNote = `<div class="text-xs text-slate-500 py-1 pl-4 border-l-2 border-slate-800">☕ 中場空檔 ${diff} 分鐘</div>`;
+            }
+          }
+
+          return `
+            ${gapNote}
+            <div class="p-3.5 rounded-xl bg-slate-950 border ${hasClash ? 'border-red-500/60' : 'border-slate-800'} flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="font-mono-time text-xs font-bold text-cyan-300 bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800 text-center">
+                  <div>${show.start}</div>
+                  <div class="text-[10px] text-slate-500">${show.end}</div>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.2 rounded text-[10px] font-bold text-white" style="background:${st.color}">${st.name}</span>
+                    <span class="font-black text-white text-sm sm:text-base">${show.artist}</span>
+                  </div>
+                  <div class="text-xs text-slate-400 mt-1">
+                    ${companions.length > 0 
+                      ? `👥 同行團友：${companions.map(c => `${c.avatar}${escapeHtml(c.name)}`).join('、')}` 
+                      : '🚶 自己獨享場次'}
+                  </div>
+                </div>
+              </div>
+              <button onclick="toggleShowPick('${show.id}', event)" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-red-950/60 text-slate-400 hover:text-red-300 text-xs border border-slate-800 transition">
+                移除
+              </button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Clash Solver Cards
+      const clashEl = document.getElementById('personal-clash-list');
+      if (clashes.length === 0) {
+        clashEl.innerHTML = `<div class="p-6 text-center text-emerald-300 text-xs bg-emerald-950/20 rounded-xl border border-emerald-500/30">🎉 太棒了！你目前在 DAY ${state.currentDay} 的跑台行程完全沒有任何時間衝突！</div>`;
+      } else {
+        clashEl.innerHTML = clashes.map(c => {
+          const stA = STAGES.find(x => x.id === c.showA.stage);
+          const stB = STAGES.find(x => x.id === c.showB.stage);
+          return `
+            <div class="p-3.5 rounded-xl bg-red-950/20 border border-red-500/40 space-y-2.5 text-xs">
+              <div class="font-bold text-red-300 flex items-center justify-between">
+                <span>⚡ 時段重疊 ${c.overlapMins} 分鐘</span>
+                <span class="text-[11px] text-slate-400">點選保留其一</span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded text-white" style="background:${stA.color}">${stA.short}</span>
+                  <span class="font-bold text-white ml-1">${c.showA.artist}</span>
+                  <div class="font-mono-time text-[10px] text-slate-400 mt-0.5">${c.showA.start} - ${c.showA.end}</div>
+                </div>
+                <button onclick="toggleShowPick('${c.showB.id}', event)" class="px-2 py-1 rounded bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 font-bold text-[11px] transition">
+                  保留此場
+                </button>
+              </div>
+              <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded text-white" style="background:${stB.color}">${stB.short}</span>
+                  <span class="font-bold text-white ml-1">${c.showB.artist}</span>
+                  <div class="font-mono-time text-[10px] text-slate-400 mt-0.5">${c.showB.start} - ${c.showB.end}</div>
+                </div>
+                <button onclick="toggleShowPick('${c.showA.id}', event)" class="px-2 py-1 rounded bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 font-bold text-[11px] transition">
+                  保留此場
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    /********************************************************************
+     * 8. INTERACTIVE ACTIONS (PICK SHOW, MODAL, GOOGLE FORM SYNC)
+     ********************************************************************/
+    window.toggleShowPick = function(showId, ev) {
+      if (ev) ev.stopPropagation();
+      const user = getActiveUser();
+      if (!user) {
+        showToast('👤 請先新增一位團友，才能開始勾選演出！');
+        openAddUserModal();
+        return;
+      }
+      const idx = user.picks.indexOf(showId);
+      if (idx > -1) {
+        user.picks.splice(idx, 1);
+      } else {
+        user.picks.push(showId);
+      }
+      user.updatedAt = nowLabel();
+      saveState();
+      renderAll();
+    };
+
+    window.toggleUserShowPick = function(userId, showId) {
+      const user = state.users.find(u => u.id === userId);
+      if (!user) return;
+      const idx = user.picks.indexOf(showId);
+      if (idx > -1) {
+        user.picks.splice(idx, 1);
+      } else {
+        user.picks.push(showId);
+      }
+      user.updatedAt = nowLabel();
+      saveState();
+      renderAll();
+    };
+    window.refreshModalUserToggles = refreshModalUserToggles;
+
+    let currentModalShowId = null;
+    window.openArtistModal = function(showId, ev) {
+      if (ev) ev.stopPropagation();
+      const show = SHOWS.find(s => s.id === showId);
+      if (!show) return;
+      currentModalShowId = showId;
+      const st = STAGES.find(x => x.id === show.stage);
+
+      const pill = document.getElementById('modal-stage-pill');
+      pill.textContent = st.name;
+      pill.style.background = st.color;
+
+      document.getElementById('modal-time-pill').textContent = `DAY ${show.day} • ${show.start} - ${show.end}`;
+      document.getElementById('modal-artist-title').textContent = show.artist;
+      document.getElementById('modal-artist-subtitle').textContent = `${show.origin} • ${show.genre}`;
+      document.getElementById('modal-artist-highlight').textContent = `💡 ${show.highlight}`;
+      document.getElementById('modal-artist-desc').textContent = show.desc;
+
+      const q = encodeURIComponent(show.artist);
+      document.getElementById('modal-yt-link').href = `https://www.youtube.com/results?search_query=${q}`;
+      document.getElementById('modal-sp-link').href = `https://open.spotify.com/search/${q}`;
+
+      refreshModalUserToggles();
+      document.getElementById('artist-modal').classList.remove('hidden');
+    };
+
+    function refreshModalUserToggles() {
+      if (!currentModalShowId) return;
+      const activeUser = getActiveUser();
+      const btn = document.getElementById('modal-btn-toggle-active');
+      const isPicked = !!activeUser && activeUser.picks.includes(currentModalShowId);
+      if (activeUser) btn.textContent = isPicked ? `✔ 已在 ${activeUser.name} 名單中` : `⭐ 加入 ${activeUser.name} 名單`;
+      btn.className = (isPicked
+        ? 'px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition'
+        : 'px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition') + (activeUser ? '' : ' hidden');
+
+      const groupDiv = document.getElementById('modal-group-toggles');
+      if (state.users.length === 0) {
+        groupDiv.innerHTML = '<span class="text-xs text-slate-500">尚未建立任何成員</span>';
+        return;
+      }
+      groupDiv.innerHTML = state.users.map(u => {
+        const has = u.picks.includes(currentModalShowId);
+        return `
+          <button onclick="toggleUserShowPick('${u.id}', '${currentModalShowId}'); refreshModalUserToggles();"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                    has ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400' : 'bg-slate-950 text-slate-500 border border-slate-800 hover:text-slate-300'
+                  }">
+            <span>${u.avatar}</span>
+            <span>${escapeHtml(u.name)}</span>
+            <span>${has ? '✔' : '+'}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function copyTextToClipboard(text, successMsg) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMsg);
+      } catch (err) {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(() => showToast(successMsg));
+        }
+      }
+      document.body.removeChild(ta);
+    }
+
+    function openAddUserModal() {
+      state.newUserAvatar = USER_AVATARS[state.users.length % USER_AVATARS.length];
+      state.newUserColor = USER_COLORS[state.users.length % USER_COLORS.length];
+      document.getElementById('input-new-user-name').value = '';
+      renderUserModalPickers();
+      document.getElementById('user-modal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('input-new-user-name').focus(), 50);
+    }
+
+    function renderUserModalPickers() {
+      const avatarGrid = document.getElementById('avatar-picker-grid');
+      avatarGrid.innerHTML = USER_AVATARS.map(av => `
+        <button type="button" onclick="selectNewUserAvatar('${av}')" class="h-10 rounded-xl text-lg flex items-center justify-center border transition ${
+          state.newUserAvatar === av
+            ? 'bg-cyan-500/25 border-cyan-400 scale-105 shadow'
+            : 'bg-slate-950 border-slate-800 hover:border-slate-600'
+        }">${av}</button>
+      `).join('');
+
+      const colorGrid = document.getElementById('color-picker-grid');
+      colorGrid.innerHTML = USER_COLORS.map(c => `
+        <button type="button" onclick="selectNewUserColor('${c}')" class="w-7 h-7 rounded-full transition flex items-center justify-center ${
+          state.newUserColor === c ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'
+        }" style="background:${c}">
+          ${state.newUserColor === c ? '<span class="text-[10px] font-black text-slate-950">✔</span>' : ''}
+        </button>
+      `).join('');
+    }
+
+    window.selectNewUserAvatar = function(av) {
+      state.newUserAvatar = av;
+      renderUserModalPickers();
+    };
+
+    window.selectNewUserColor = function(c) {
+      state.newUserColor = c;
+      renderUserModalPickers();
+    };
+
+    function showToast(msg) {
+      const box = document.getElementById('toast-box');
+      document.getElementById('toast-text').textContent = msg;
+      box.classList.remove('hidden');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => box.classList.add('hidden'), 3600);
+    }
+
+    function renderAll() {
+      renderUserBar();
+      if (state.currentView === 'grid') renderProportionalGrid();
+      if (state.currentView === 'compare') renderComparisonView();
+      if (state.currentView === 'personal') renderPersonalView();
+    }
+
+    /********************************************************************
+     * 9. EVENT LISTENERS & INITIALIZATION
+     ********************************************************************/
+    document.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      renderAll();
+
+      // Day switching
+      const btnD1 = document.getElementById('btn-day-1');
+      const btnD2 = document.getElementById('btn-day-2');
+      btnD1.addEventListener('click', () => {
+        state.currentDay = 1;
+        btnD1.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-black transition bg-amber-500 text-slate-950 shadow';
+        btnD2.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-400 hover:text-white transition';
+        renderAll();
+      });
+      btnD2.addEventListener('click', () => {
+        state.currentDay = 2;
+        btnD2.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-black transition bg-amber-500 text-slate-950 shadow';
+        btnD1.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-400 hover:text-white transition';
+        renderAll();
+      });
+
+      // View Tabs switching
+      document.querySelectorAll('.view-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.currentView = btn.dataset.view;
+          ['grid', 'compare', 'personal'].forEach(v => {
+            document.getElementById(`view-${v}`).classList.toggle('hidden', v !== state.currentView);
+          });
+          document.querySelectorAll('.view-tab-btn').forEach(b => {
+            const active = b.dataset.view === state.currentView;
+            b.className = active
+              ? 'view-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition flex items-center gap-1.5'
+              : 'view-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5';
+          });
+          renderAll();
+        });
+      });
+
+      // Zoom scale buttons
+      document.querySelectorAll('.zoom-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.pxPerMin = parseFloat(btn.dataset.zoom);
+          document.querySelectorAll('.zoom-btn').forEach(b => {
+            b.className = b === btn
+              ? 'zoom-btn px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold'
+              : 'zoom-btn px-1.5 py-0.5 rounded hover:text-white';
+          });
+          renderProportionalGrid();
+        });
+      });
+
+      // Filter buttons
+      const btnFilterSel = document.getElementById('btn-filter-selected');
+      btnFilterSel.addEventListener('click', () => {
+        state.filterOnlySelected = !state.filterOnlySelected;
+        btnFilterSel.className = state.filterOnlySelected
+          ? 'px-2.5 py-1.5 rounded-lg bg-cyan-500 text-slate-950 font-bold text-xs transition flex items-center gap-1'
+          : 'px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition flex items-center gap-1';
+        renderProportionalGrid();
+      });
+
+      const btnFilterFriends = document.getElementById('btn-filter-friends');
+      btnFilterFriends.addEventListener('click', () => {
+        state.filterShowFriends = !state.filterShowFriends;
+        btnFilterFriends.className = state.filterShowFriends
+          ? 'px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-xs transition flex items-center gap-1'
+          : 'px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition flex items-center gap-1';
+        renderProportionalGrid();
+      });
+
+      // Search Input
+      const searchInput = document.getElementById('search-input');
+      const btnClearSearch = document.getElementById('btn-clear-search');
+      searchInput.addEventListener('input', (e) => {
+        state.searchQuery = e.target.value;
+        btnClearSearch.classList.toggle('hidden', !state.searchQuery);
+        renderProportionalGrid();
+      });
+      btnClearSearch.addEventListener('click', () => {
+        state.searchQuery = '';
+        searchInput.value = '';
+        btnClearSearch.classList.add('hidden');
+        renderProportionalGrid();
+      });
+
+      // Add New User Modal (replaces browser prompt)
+      document.getElementById('btn-add-user').addEventListener('click', openAddUserModal);
+      document.getElementById('btn-close-user-modal').addEventListener('click', () => {
+        document.getElementById('user-modal').classList.add('hidden');
+      });
+      document.getElementById('btn-cancel-user-modal').addEventListener('click', () => {
+        document.getElementById('user-modal').classList.add('hidden');
+      });
+      document.getElementById('btn-confirm-add-user').addEventListener('click', () => {
+        const nameInput = document.getElementById('input-new-user-name');
+        const name = nameInput.value.trim();
+        if (!name) {
+          showToast('⚠️ 請輸入成員的暱稱！');
+          nameInput.focus();
+          return;
+        }
+        const newUser = {
+          id: 'u_' + Date.now(),
+          name: name.slice(0, 30),
+          avatar: state.newUserAvatar,
+          color: state.newUserColor,
+          picks: [],
+          updatedAt: nowLabel()
+        };
+        state.users.push(newUser);
+        state.activeUserId = newUser.id;
+        document.getElementById('user-modal').classList.add('hidden');
+        saveState();
+        renderAll();
+        showToast(`👤 已建立「${newUser.avatar} ${newUser.name}」！現在可直接點選時間軸選團。`);
+      });
+      document.getElementById('input-new-user-name').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('btn-confirm-add-user').click();
+      });
+
+      // Delete the currently active member
+      document.getElementById('btn-delete-user').addEventListener('click', () => {
+        const user = getActiveUser();
+        if (user) deleteUser(user.id);
+      });
+
+      // Share snapshot URL
+      document.getElementById('btn-quick-share-url').addEventListener('click', () => {
+        if (state.users.length === 0) {
+          showToast('⚠️ 目前沒有任何成員可分享，請先新增團友！');
+          return;
+        }
+        const jsonStr = JSON.stringify(state.users.map(({ id, name, avatar, color, picks }) => ({ id, name, avatar, color, picks })));
+        const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+        const shareUrl = `${window.location.origin}${window.location.pathname}#share=${encoded}`;
+        copyTextToClipboard(shareUrl, '🔗 已複製全團分享網址！對方開啟後即可匯入名單');
+      });
+
+      // Clear all local data
+      document.getElementById('btn-clear-all').addEventListener('click', () => {
+        if (state.users.length === 0) return;
+        if (!confirm('確定要清除所有成員與勾選紀錄嗎？此動作無法復原。')) return;
+        state.users = [];
+        state.activeUserId = null;
+        saveState();
+        renderAll();
+        showToast('🗑️ 已清除所有本機紀錄');
+      });
+
+      // Artist Modal Events
+      document.getElementById('btn-close-artist-modal').addEventListener('click', () => {
+        document.getElementById('artist-modal').classList.add('hidden');
+      });
+      document.getElementById('modal-btn-toggle-active').addEventListener('click', () => {
+        if (currentModalShowId) {
+          toggleShowPick(currentModalShowId);
+          refreshModalUserToggles();
+        }
+      });
+
+      // Compare table filter
+      document.getElementById('chk-compare-only-picked').addEventListener('change', renderComparisonView);
+
+      // Export CSV
+      document.getElementById('btn-export-csv').addEventListener('click', () => {
+        const csvCell = v => `"${String(v).replace(/"/g, '""')}"`;
+        const headers = ['Day', 'Start', 'End', 'Stage', 'Artist', ...state.users.map(u => csvCell(u.name))];
+        const rows = SHOWS.map(s => {
+          const st = STAGES.find(x => x.id === s.stage);
+          return [
+            `DAY ${s.day}`, s.start, s.end, st.name, `"${s.artist}"`,
+            ...state.users.map(u => u.picks.includes(s.id) ? 'V' : '')
+          ].join(',');
+        });
+        const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `2026_浪人祭_團友觀看名單總表.csv`;
+        link.click();
+        showToast('📥 已下載團友觀看名單 CSV 檔案！');
+      });
+
+      // Export .ics Calendar
+      document.getElementById('btn-export-ics').addEventListener('click', () => {
+        const user = getActiveUser();
+        if (!user) {
+          showToast('👤 請先新增一位團友！');
+          return;
+        }
+        const myShows = SHOWS.filter(s => user.picks.includes(s.id));
+        if (myShows.length === 0) {
+          showToast('⚠️ 請先在時間表上勾選至少一場演出！');
+          return;
+        }
+        let ics = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Vagabond2026//TW\n';
+        myShows.forEach(s => {
+          const dateStr = s.day === 1 ? '20261107' : '20261108';
+          const stTime = s.start.replace(':', '') + '00';
+          const edTime = s.end.replace(':', '') + '00';
+          const st = STAGES.find(x => x.id === s.stage);
+          ics += `BEGIN:VEVENT\nSUMMARY:[浪人祭] ${s.artist} @ ${st.name}\nDTSTART:${dateStr}T${stTime}\nDTEND:${dateStr}T${edTime}\nLOCATION:台南安平觀夕平臺-${st.name}\nDESCRIPTION:${s.highlight}\nEND:VEVENT\n`;
+        });
+        ics += 'END:VCALENDAR';
+        const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `2026浪人祭_${user.name}.ics`;
+        link.click();
+        showToast('📅 已下載 .ics 行事曆檔案！');
+      });
+
+      // Copy personal text list
+      document.getElementById('btn-copy-text').addEventListener('click', () => {
+        const user = getActiveUser();
+        if (!user) {
+          showToast('👤 請先新增一位團友！');
+          return;
+        }
+        const d1 = SHOWS.filter(s => s.day === 1 && user.picks.includes(s.id)).sort((a,b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+        const d2 = SHOWS.filter(s => s.day === 2 && user.picks.includes(s.id)).sort((a,b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+        const formatList = arr => arr.map(s => `• ${s.start}-${s.end} [${STAGES.find(x=>x.id===s.stage).short}] ${s.artist}`).join('\n') || '(無)';
+        const text = `🌊 2026 浪人祭【${user.name}】的看團時間表\n\n☀️ DAY 1 (11/07):\n${formatList(d1)}\n\n🌅 DAY 2 (11/08):\n${formatList(d2)}`;
+        copyTextToClipboard(text, '📋 已複製文字版看團清單，可直接貼上至 LINE 群組！');
+      });
+    });
+  </script>
+</body>
+</html>
