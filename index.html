@@ -434,7 +434,7 @@
 
   <!-- 2. ARTIST DETAIL & GROUP PICKER MODAL -->
   <div id="artist-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full max-h-[90dvh] overflow-y-auto shadow-2xl">
       <div id="modal-header-bar" class="p-5 bg-slate-950 border-b border-slate-800 flex items-start justify-between gap-3">
         <div>
           <div class="flex items-center gap-2 mb-1.5">
@@ -448,6 +448,10 @@
       </div>
 
       <div class="p-5 space-y-4">
+        <aside id="artist-ai-notice" aria-label="AI 生成內容提醒" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/40 text-xs sm:text-sm text-amber-200 leading-relaxed">
+          <p class="font-bold mb-1">⚠️ 樂團介紹為 AI 生成內容</p>
+          <p>樂團背景、曲風、演出亮點與介紹由 AI 生成，可能包含錯誤、推測或過時資訊，僅供參考。請以樂團官方資訊及主辦單位公告為準。</p>
+        </aside>
         <div class="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-xs text-cyan-200 font-medium" id="modal-artist-highlight">
           演出亮點介紹
         </div>
