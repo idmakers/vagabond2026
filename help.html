@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="2026 浪人祭看團紀錄表使用說明：新增團友、規劃演出、比較行程、處理衝堂與分享匯出。">
+  <title>使用說明｜2026 浪人祭看團紀錄表</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, "Microsoft JhengHei", sans-serif; background: #060b19; color: #f1f5f9; line-height: 1.8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    a { color: #67e8f9; text-underline-offset: 4px; }
+    a:hover { color: #cffafe; }
+    a:focus-visible, summary:focus-visible { outline: 3px solid #fbbf24; outline-offset: 5px; }
+    .wrap { width: min(100% - 36px, 1080px); margin-inline: auto; }
+    header { border-bottom: 1px solid #263247; background: #0f172a; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 16px; }
+    .brand { font-weight: 800; letter-spacing: .04em; }
+    .button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 18px; border: 1px solid #36526b; border-radius: 12px; background: #132b3c; font-weight: 700; text-decoration: none; }
+    .hero { padding-block: 52px 32px; }
+    .eyebrow { color: #fbbf24; font-size: .8rem; font-weight: 800; letter-spacing: .12em; }
+    h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.25; margin: 12px 0 16px; }
+    h2 { font-size: 1.35rem; margin: 0 0 16px; }
+    h3 { font-size: 1rem; margin: 20px 0 6px; }
+    p { margin: 8px 0 16px; }
+    .intro, .muted { color: #b5c3d5; }
+    .intro { max-width: 680px; font-size: 1.08rem; }
+    nav { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 28px; }
+    nav a { padding: 7px 14px; background: #111d31; border: 1px solid #263247; border-radius: 999px; text-decoration: none; font-size: .9rem; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    section { scroll-margin-top: 24px; padding: 28px; border: 1px solid #263247; border-radius: 20px; background: #0e1729; }
+    .wide { grid-column: 1 / -1; }
+    .number { display: inline-flex; justify-content: center; align-items: center; width: 32px; height: 32px; margin-right: 10px; background: #164e63; border-radius: 9px; color: #a5f3fc; font-size: 1rem; }
+    ul, ol { padding-left: 24px; margin: 10px 0; }
+    li { margin-block: 8px; }
+    .note { background: #122b3b; border-left: 3px solid #22d3ee; border-radius: 8px; padding: 14px 18px; margin-top: 20px; }
+    .note.amber { background: #2b2518; border-color: #fbbf24; }
+    .note p:last-child { margin-bottom: 0; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-top: 18px; }
+    .legend span { display: inline-flex; align-items: center; gap: 8px; }
+    .dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+    .cyan { background: #38bdf8; } .red { background: #f87171; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { border-bottom: 1px solid #263247; padding: 14px 12px; vertical-align: top; }
+    th { color: #a5f3fc; } th:first-child { min-width: 120px; }
+    details { border-top: 1px solid #263247; padding: 16px 0; }
+    summary { cursor: pointer; font-weight: 700; }
+    details p { color: #b5c3d5; padding-left: 20px; margin: 12px 0 0; }
+    footer { padding-block: 36px 48px; color: #94a3b8; text-align: center; }
+    .skip { position: absolute; top: -100px; left: 16px; background: #0f172a; padding: 12px; z-index: 10; }
+    .skip:focus { top: 12px; }
+    @media (max-width: 680px) { .layout { grid-template-columns: 1fr; } .wide { grid-column: auto; } section { padding: 22px; } .hero { padding-top: 32px; } .brand { font-size: .85rem; } .topbar .button { padding-inline: 12px; white-space: nowrap; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">跳至使用說明</a>
+  <header>
+    <div class="wrap topbar">
+      <span class="brand">🌊 2026 浪人祭 · 看團紀錄表</span>
+      <a class="button" href="./index.html">← 返回看團紀錄表</a>
+    </div>
+  </header>
+  <main class="wrap" id="main">
+    <div class="hero">
+      <div class="eyebrow">VAGABOND FESTIVAL / 使用指南</div>
+      <h1>把想看的團，排成你的路線。</h1>
+      <p class="intro">從第一場勾選到全團行程分享，跟著下方步驟，安排兩天的看團計畫。</p>
+      <a class="button" href="./index.html">開始規劃 →</a>
+    </div>
+    <nav aria-label="使用說明目錄">
+      <a href="#start">快速上手</a><a href="#grid">時間軸選團</a><a href="#friends">團友對照</a><a href="#clashes">衝堂分析</a><a href="#share">分享紀錄</a><a href="#export">匯出清單</a><a href="#faq">常見問題</a>
+    </nav>
+    <div class="layout">
+      <section class="wide" id="start">
+        <h2><span class="number">1</span>第一次使用，先做這三件事</h2>
+        <ol>
+          <li><strong>新增自己：</strong>點擊主頁上方「新增團友」，輸入名稱、選擇頭像與顏色，再完成新增。</li>
+          <li><strong>選日期與演出：</strong>切換 DAY 1 或 DAY 2，直接點擊時間軸上的演出方塊，勾選想看的樂團；再點一次即可取消。</li>
+          <li><strong>檢查行程：</strong>開啟「個人跑台清單與衝堂」，查看順序、空檔與重疊時段，調整成適合自己的路線。</li>
+        </ol>
+        <div class="note">想幫朋友一起安排？再新增其他團友，點擊上方成員標籤即可切換目前紀錄人員。</div>
+      </section>
+      <section id="grid">
+        <h2><span class="number">2</span>用時間軸挑選演出</h2>
+        <p>「2D 時間軸總表」以舞台分欄，方塊的位置與高度對應演出時間與長度。</p>
+        <ul>
+          <li><strong>點方塊：</strong>替目前成員勾選或取消演出。</li>
+          <li><strong>點右上角 ⓘ：</strong>查看樂團介紹，並前往 YouTube 或 Spotify 搜尋試聽。</li>
+          <li><strong>搜尋：</strong>輸入樂團名稱或曲風，快速找到對應場次。</li>
+          <li><strong>突顯已選／顯示團友熱門：</strong>切換顯示重點，方便掌握自己的選擇與團友偏好。</li>
+          <li><strong>時間軸比例：</strong>較寬的桌面畫面可切換緊湊、標準或寬敞比例。</li>
+        </ul>
+        <div class="legend"><span><i class="dot cyan" aria-hidden="true"></i>藍色外框：目前成員已選</span><span><i class="dot red" aria-hidden="true"></i>紅色外框：已選場次衝堂</span></div>
+        <p class="muted">手機上可左右滑動時間表，查看其他舞台。</p>
+      </section>
+      <section id="friends">
+        <h2><span class="number">3</span>比較團友的看團計畫</h2>
+        <p>開啟「多人看團對照表」，就能比較同一天各場演出有哪些成員想看。</p>
+        <ul>
+          <li>每位團友各有一欄，可以直接替該成員勾選或取消。</li>
+          <li>勾選「僅顯示有人勾選的場次」，縮小表格範圍。</li>
+          <li>切換 DAY 1／DAY 2，分別查看兩天計畫。</li>
+          <li>手機上可左右滑動表格，查看其他成員欄位。</li>
+        </ul>
+        <div class="note"><strong>多人紀錄如何運作？</strong><p>目前是在同一個瀏覽器中管理多位成員的選擇。其他裝置需透過分享網址匯入，後續修改不會即時同步。</p></div>
+      </section>
+      <section class="wide" id="clashes">
+        <h2><span class="number">4</span>查看跑台順序與衝堂</h2>
+        <p>先切換到要查看的成員，再開啟「個人跑台清單與衝堂」。頁面會列出目前日期的已選場次、同場團友、相鄰場次的時間差，以及演出重疊的分鐘數。</p>
+        <ul>
+          <li><strong>有衝堂：</strong>比較兩場的時間與偏好，取消其中一場，或自行決定只看部分演出。</li>
+          <li><strong>有空檔：</strong>依舞台位置與自己的步行速度，預留移動、休息或用餐時間。</li>
+        </ul>
+        <div class="note amber">空檔是演出起迄時間的差值，沒有納入實際步行距離、排隊或現場人潮；沒有衝堂也不代表一定趕得上下一場。</div>
+      </section>
+      <section id="share">
+        <h2><span class="number">5</span>把全團紀錄分享出去</h2>
+        <ol>
+          <li>在主頁點擊「複製全團分享網址」。</li>
+          <li>將網址貼到群組或傳給團友。</li>
+          <li>對方開啟網址，即可匯入當下的成員與勾選紀錄；若瀏覽器已有成員資料，需確認是否取代。</li>
+        </ol>
+        <div class="note"><strong>分享的是當下快照。</strong><p>你之後修改計畫，舊網址的內容不會跟著更新，請重新複製並傳送分享網址。團友修改後，也需產生新網址傳回。</p></div>
+        <p class="muted">分享網址包含成員名稱與勾選資料，持有網址的人可讀取。匯入會取代目前整份成員紀錄，不會自動合併。</p>
+      </section>
+      <section id="export">
+        <h2><span class="number">6</span>匯出，帶著行程出門</h2>
+        <div class="table-wrap">
+          <table>
+            <caption class="muted">各種匯出方式與範圍</caption>
+            <thead><tr><th scope="col">功能與位置</th><th scope="col">內容</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">CSV 報表<br><small>多人看團對照表</small></th><td>兩天全部演出，以及所有成員的勾選狀態；不受畫面日期與表格篩選影響。</td></tr>
+              <tr><th scope="row">.ics 手機行事曆<br><small>個人跑台清單</small></th><td>目前成員兩天所有已選演出，可匯入支援 .ics 的行事曆。</td></tr>
+              <tr><th scope="row">複製文字清單<br><small>個人跑台清單</small></th><td>目前成員兩天的已選場次，依日期分組，可貼到備忘錄或群組。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">行事曆檔案目前未指定時區，匯入後請核對演出日期與時間是否符合台灣時間。重複匯入也可能產生重複事件。</p>
+      </section>
+      <section class="wide" id="faq">
+        <h2>常見問題</h2>
+        <details open><summary>重新整理後，紀錄還在嗎？</summary><p>成員與勾選紀錄會儲存在目前網站的瀏覽器本機儲存空間。一般情況下，重新整理後仍會保留；無痕模式、儲存空間限制或清除網站資料可能讓紀錄消失。建議另外保存最新的全團分享網址。</p></details>
+        <details><summary>為什麼換手機或網址後，紀錄不見了？</summary><p>本機紀錄不會自動跨裝置或瀏覽器同步。GitHub 預設網址與自訂網域也屬於不同網站來源。請在原本看得到紀錄的頁面複製全團分享網址，再使用相同網址的 #share= 資料片段，到新網域匯入；切換網域前先保留分享網址。</p></details>
+        <details><summary>按演出方塊沒有選到，怎麼辦？</summary><p>先確認已新增至少一位團友，並點擊上方成員標籤選擇目前紀錄人員。若點到右上角 ⓘ，會開啟資訊視窗；關閉後點擊方塊其餘區域即可勾選。</p></details>
+        <details><summary>如何刪除紀錄？</summary><p>選擇成員後，點擊「刪除目前成員」可移除該成員與其選團紀錄。「清除全部紀錄」會移除目前瀏覽器中所有成員與勾選資料。兩者皆需確認，刪除前請先保存分享網址。</p></details>
+        <details><summary>複製或下載失敗怎麼辦？</summary><p>請使用一般瀏覽器開啟正式網站再試一次；若在通訊軟體的內建瀏覽器中操作，可改用系統瀏覽器。也請確認瀏覽器允許下載，並留意頁面顯示的提示訊息。</p></details>
+        <details><summary>演出時間會自動更新嗎？</summary><p>頁面使用專案內建的演出資料，沒有即時連接官方節目表。實際演出安排請以主辦單位最新公告與現場資訊為準。</p></details>
+      </section>
+    </div>
+  </main>
+  <footer class="wrap"><a class="button" href="./index.html">回到時間軸，安排下一場 →</a><p>2026 浪人祭看團紀錄表 · 使用說明</p></footer>
+</body>
+</html>
