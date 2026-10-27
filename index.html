@@ -653,23 +653,41 @@
         .replace(/'/g, '&#39;');
     }
 
-    // Normalizes user data from localStorage or a share URL so it is safe to render.
+    // Templates contain only validated IDs here; display names are assigned as text.
+    function userNameSlot(user) {
+      return `<span data-user-name="${escapeHtml(user.id)}"></span>`;
+    }
+
+    function hydrateUserNames(root) {
+      const usersById = new Map(state.users.map(user => [user.id, user]));
+      root.querySelectorAll('[data-user-name]').forEach(element => {
+        element.textContent = usersById.get(element.dataset.userName)?.name || '';
+      });
+    }
+
+    const MAX_USERS = 100;
+    const MAX_SHARE_LENGTH = 262144;
+
+    // Apply the same schema to localStorage and incoming share snapshots.
     function sanitizeUsers(list) {
       if (!Array.isArray(list)) return [];
       const validShowIds = new Set(SHOWS.map(s => s.id));
       const seenIds = new Set();
       return list
-        .filter(u => u && typeof u.name === 'string' && u.name.trim())
+        .filter(u => u && typeof u === 'object' && !Array.isArray(u) && typeof u.name === 'string' && u.name.trim())
+        .slice(0, MAX_USERS)
         .map((u, i) => {
           let id = typeof u.id === 'string' && /^[\w-]{1,64}$/.test(u.id) ? u.id : `u_${Date.now()}_${i}`;
-          if (seenIds.has(id)) id = `u_${Date.now()}_${i}`;
+          let duplicateSuffix = 0;
+          const baseId = id;
+          while (seenIds.has(id)) id = `${baseId}_${++duplicateSuffix}`;
           seenIds.add(id);
           return {
             id,
             name: u.name.trim().slice(0, 30),
             avatar: USER_AVATARS.includes(u.avatar) ? u.avatar : '🎧',
-            color: /^#[0-9a-fA-F]{6}$/.test(u.color) ? u.color : USER_COLORS[i % USER_COLORS.length],
-            picks: Array.isArray(u.picks) ? [...new Set(u.picks.filter(p => validShowIds.has(p)))] : [],
+            color: typeof u.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(u.color) ? u.color : USER_COLORS[i % USER_COLORS.length],
+            picks: Array.isArray(u.picks) ? [...new Set(u.picks.slice(0, SHOWS.length * 2).filter(p => typeof p === 'string' && validShowIds.has(p)))] : [],
             updatedAt: typeof u.updatedAt === 'string' ? u.updatedAt.slice(0, 40) : ''
           };
         });
@@ -703,10 +721,17 @@
     }
 
     function importFromShareHash() {
+      if (!/^#(?:share|cloud)=/.test(window.location.hash)) return;
+      if (window.location.hash.length > MAX_SHARE_LENGTH) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        setTimeout(() => showToast('⚠️ 分享資料過大，無法匯入'), 0);
+        return;
+      }
       const match = window.location.hash.match(/^#(?:share|cloud)=(.+)$/);
       if (!match) return;
       try {
         const decoded = JSON.parse(decodeURIComponent(escape(atob(match[1]))));
+        if (!Array.isArray(decoded) || decoded.length > MAX_USERS) throw new Error('invalid share size or structure');
         const imported = sanitizeUsers(decoded);
         if (imported.length === 0) throw new Error('empty share data');
         const ok = state.users.length === 0 ||
@@ -813,13 +838,13 @@
         const isActive = u.id === activeUser.id;
         const dayCount = SHOWS.filter(s => s.day === state.currentDay && u.picks.includes(s.id)).length;
         return `
-          <button onclick="switchUser('${u.id}')" class="px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+          <button data-action="switch-user" data-user-id="${escapeHtml(u.id)}" class="px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
             isActive 
               ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 ring-2 ring-white/40' 
               : 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700'
           }">
             <span>${u.avatar}</span>
-            <span>${escapeHtml(u.name)}</span>
+            ${userNameSlot(u)}
             <span class="px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-slate-950/30 text-slate-950 font-black' : 'bg-slate-950 text-cyan-400'}">${dayCount}</span>
           </button>
         `;
@@ -840,6 +865,17 @@
      * 5. RENDERING: 2D PROPORTIONAL TIMETABLE GRID
      ********************************************************************/
     function renderProportionalGrid() {
+      try {
+        renderProportionalGridContent();
+      } finally {
+        document.querySelectorAll('[data-picker-title]').forEach(element => {
+          const user = state.users.find(user => user.id === element.dataset.pickerTitle);
+          element.title = user ? `${user.name} 想看` : '';
+        });
+      }
+    }
+
+    function renderProportionalGridContent() {
       const pxPerMin = state.pxPerMin;
       const totalMins = 660; // 11:00 to 22:00 = 11 hours = 660 mins
       const totalHeight = totalMins * pxPerMin;
@@ -926,7 +962,7 @@
           }
 
           return `
-            <div onclick="toggleShowPick('${show.id}', event)"
+            <div data-action="toggle-show" data-show-id="${escapeHtml(show.id)}"
                  class="show-block p-2 flex flex-col justify-between select-none ${isSelectedByActive ? 'selected-mine' : ''} ${isClashing ? 'clash-mine' : ''} ${isDimmed ? 'opacity-25 hover:opacity-90' : ''}"
                  style="top: ${topPx}px; height: ${heightPx}px; background: ${isSelectedByActive ? 'linear-gradient(135deg, rgba(14, 116, 144, 0.85), rgba(15, 23, 42, 0.95))' : '#111c35'}; border-left: 4px solid ${stage.color}; border-top: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08);">
               
@@ -939,7 +975,7 @@
                   <div class="flex items-center gap-1">
                     ${isClashing ? '<span title="時段衝堂！" class="text-[11px]">⚠️</span>' : ''}
                     ${isSelectedByActive ? '<span class="text-cyan-300 text-xs font-black">★</span>' : ''}
-                    <button onclick="openArtistModal('${show.id}', event)" class="w-5 h-5 rounded-full bg-slate-800/90 hover:bg-slate-600 text-slate-300 hover:text-white text-[10px] font-bold flex items-center justify-center transition" title="查看樂團介紹與團友選擇">
+                    <button data-action="open-artist" data-show-id="${escapeHtml(show.id)}" class="w-5 h-5 rounded-full bg-slate-800/90 hover:bg-slate-600 text-slate-300 hover:text-white text-[10px] font-bold flex items-center justify-center transition" title="查看樂團介紹與團友選擇">
                       ⓘ
                     </button>
                   </div>
@@ -958,7 +994,7 @@
               <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-800/60">
                 <div class="flex items-center -space-x-1 overflow-hidden">
                   ${state.filterShowFriends && allPickers.length > 0 ? allPickers.map(u => `
-                    <span title="${escapeHtml(u.name)} 想看" class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ring-1 ring-slate-950" style="background:${u.color}; color:#020617;">
+                    <span data-picker-title="${escapeHtml(u.id)}" class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ring-1 ring-slate-950" style="background:${u.color}; color:#020617;">
                       ${u.avatar}
                     </span>
                   `).join('') : '<span class="text-[10px] text-slate-500">點擊選取</span>'}
@@ -977,6 +1013,11 @@
      * 6. RENDERING: MULTI-USER COMPARISON MATRIX VIEW
      ********************************************************************/
     function renderComparisonView() {
+      renderComparisonViewContent();
+      hydrateUserNames(document.getElementById('view-compare'));
+    }
+
+    function renderComparisonViewContent() {
       document.getElementById('compare-day-badge').textContent = state.currentDay === 1 ? 'DAY 1 (11/07 六)' : 'DAY 2 (11/08 日)';
       const onlyPicked = document.getElementById('chk-compare-only-picked').checked;
 
@@ -990,7 +1031,7 @@
           <th class="py-3 px-3 text-center w-28" style="border-bottom: 2px solid ${u.color}">
             <div class="flex flex-col items-center">
               <span class="text-sm">${u.avatar}</span>
-              <span class="text-white font-bold">${escapeHtml(u.name)}</span>
+              <span class="text-white font-bold">${userNameSlot(u)}</span>
             </div>
           </th>
         `).join('')}
@@ -1024,14 +1065,14 @@
               <span class="px-2 py-0.5 rounded text-xs font-bold text-white" style="background:${st.color}">${st.short}</span>
             </td>
             <td class="py-2.5 px-4">
-              <div class="font-bold text-white cursor-pointer hover:text-cyan-400" onclick="openArtistModal('${show.id}', event)">${show.artist}</div>
+              <div class="font-bold text-white cursor-pointer hover:text-cyan-400" data-action="open-artist" data-show-id="${escapeHtml(show.id)}">${show.artist}</div>
               <div class="text-[11px] text-slate-400">${show.origin} · ${show.genre}</div>
             </td>
             ${state.users.map(u => {
               const picked = u.picks.includes(show.id);
               return `
                 <td class="py-2.5 px-3 text-center">
-                  <button onclick="toggleUserShowPick('${u.id}', '${show.id}')" class="w-8 h-8 rounded-xl font-bold transition inline-flex items-center justify-center ${
+                  <button data-action="toggle-user-show" data-user-id="${escapeHtml(u.id)}" data-show-id="${escapeHtml(show.id)}" class="w-8 h-8 rounded-xl font-bold transition inline-flex items-center justify-center ${
                     picked ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50' : 'bg-slate-950 text-slate-600 hover:text-slate-400 border border-slate-800'
                   }">
                     ${picked ? '✔' : '+'}
@@ -1115,12 +1156,12 @@
                   </div>
                   <div class="text-xs text-slate-400 mt-1">
                     ${companions.length > 0 
-                      ? `👥 同行團友：${companions.map(c => `${c.avatar}${escapeHtml(c.name)}`).join('、')}` 
+                      ? `👥 同行團友：${companions.map(c => `${c.avatar}${userNameSlot(c)}`).join('、')}` 
                       : '🚶 自己獨享場次'}
                   </div>
                 </div>
               </div>
-              <button onclick="toggleShowPick('${show.id}', event)" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-red-950/60 text-slate-400 hover:text-red-300 text-xs border border-slate-800 transition">
+              <button data-action="toggle-show" data-show-id="${escapeHtml(show.id)}" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-red-950/60 text-slate-400 hover:text-red-300 text-xs border border-slate-800 transition">
                 移除
               </button>
             </div>
@@ -1148,7 +1189,7 @@
                   <span class="font-bold text-white ml-1">${c.showA.artist}</span>
                   <div class="font-mono-time text-[10px] text-slate-400 mt-0.5">${c.showA.start} - ${c.showA.end}</div>
                 </div>
-                <button onclick="toggleShowPick('${c.showB.id}', event)" class="px-2 py-1 rounded bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 font-bold text-[11px] transition">
+                <button data-action="toggle-show" data-show-id="${escapeHtml(c.showB.id)}" class="px-2 py-1 rounded bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 font-bold text-[11px] transition">
                   保留此場
                 </button>
               </div>
@@ -1158,7 +1199,7 @@
                   <span class="font-bold text-white ml-1">${c.showB.artist}</span>
                   <div class="font-mono-time text-[10px] text-slate-400 mt-0.5">${c.showB.start} - ${c.showB.end}</div>
                 </div>
-                <button onclick="toggleShowPick('${c.showA.id}', event)" class="px-2 py-1 rounded bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 font-bold text-[11px] transition">
+                <button data-action="toggle-show" data-show-id="${escapeHtml(c.showA.id)}" class="px-2 py-1 rounded bg-cyan-600/30 hover:bg-cyan-600 text-cyan-200 font-bold text-[11px] transition">
                   保留此場
                 </button>
               </div>
@@ -1249,16 +1290,17 @@
       groupDiv.innerHTML = state.users.map(u => {
         const has = u.picks.includes(currentModalShowId);
         return `
-          <button onclick="toggleUserShowPick('${u.id}', '${currentModalShowId}'); refreshModalUserToggles();"
+          <button data-action="toggle-modal-user-show" data-user-id="${escapeHtml(u.id)}" data-show-id="${escapeHtml(currentModalShowId)}"
                   class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
                     has ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400' : 'bg-slate-950 text-slate-500 border border-slate-800 hover:text-slate-300'
                   }">
             <span>${u.avatar}</span>
-            <span>${escapeHtml(u.name)}</span>
+            ${userNameSlot(u)}
             <span>${has ? '✔' : '+'}</span>
           </button>
         `;
       }).join('');
+      hydrateUserNames(groupDiv);
     }
 
     function copyTextToClipboard(text, successMsg) {
@@ -1291,7 +1333,7 @@
     function renderUserModalPickers() {
       const avatarGrid = document.getElementById('avatar-picker-grid');
       avatarGrid.innerHTML = USER_AVATARS.map(av => `
-        <button type="button" onclick="selectNewUserAvatar('${av}')" class="h-10 rounded-xl text-lg flex items-center justify-center border transition ${
+        <button type="button" data-action="select-avatar" data-avatar="${escapeHtml(av)}" class="h-10 rounded-xl text-lg flex items-center justify-center border transition ${
           state.newUserAvatar === av
             ? 'bg-cyan-500/25 border-cyan-400 scale-105 shadow'
             : 'bg-slate-950 border-slate-800 hover:border-slate-600'
@@ -1300,7 +1342,7 @@
 
       const colorGrid = document.getElementById('color-picker-grid');
       colorGrid.innerHTML = USER_COLORS.map(c => `
-        <button type="button" onclick="selectNewUserColor('${c}')" class="w-7 h-7 rounded-full transition flex items-center justify-center ${
+        <button type="button" data-action="select-color" data-color="${escapeHtml(c)}" class="w-7 h-7 rounded-full transition flex items-center justify-center ${
           state.newUserColor === c ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'
         }" style="background:${c}">
           ${state.newUserColor === c ? '<span class="text-[10px] font-black text-slate-950">✔</span>' : ''}
@@ -1331,6 +1373,7 @@
       if (state.currentView === 'grid') renderProportionalGrid();
       if (state.currentView === 'compare') renderComparisonView();
       if (state.currentView === 'personal') renderPersonalView();
+      hydrateUserNames(document);
     }
 
     /********************************************************************
@@ -1339,6 +1382,39 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadState();
       renderAll();
+
+      // Delegation survives innerHTML redraws. Only the nearest action runs, so
+      // opening an artist modal never also toggles the enclosing show card.
+      document.addEventListener('click', event => {
+        const control = event.target instanceof Element
+          ? event.target.closest('[data-action]') : null;
+        if (!control) return;
+        const { action, userId, showId, avatar, color } = control.dataset;
+        switch (action) {
+          case 'switch-user':
+            if (state.users.some(user => user.id === userId)) switchUser(userId);
+            break;
+          case 'toggle-show':
+            if (SHOWS.some(show => show.id === showId)) toggleShowPick(showId, event);
+            break;
+          case 'open-artist':
+            if (SHOWS.some(show => show.id === showId)) openArtistModal(showId, event);
+            break;
+          case 'toggle-user-show':
+          case 'toggle-modal-user-show':
+            if (SHOWS.some(show => show.id === showId)) {
+              toggleUserShowPick(userId, showId);
+              if (action === 'toggle-modal-user-show') refreshModalUserToggles();
+            }
+            break;
+          case 'select-avatar':
+            if (USER_AVATARS.includes(avatar)) selectNewUserAvatar(avatar);
+            break;
+          case 'select-color':
+            if (USER_COLORS.includes(color)) selectNewUserColor(color);
+            break;
+        }
+      });
 
       // Day switching
       const btnD1 = document.getElementById('btn-day-1');
@@ -1436,8 +1512,14 @@
           nameInput.focus();
           return;
         }
+        if (state.users.length >= MAX_USERS) {
+          showToast(`⚠️ 最多可建立 ${MAX_USERS} 位成員`);
+          return;
+        }
+        let newUserId = 'u_' + Date.now();
+        while (state.users.some(user => user.id === newUserId)) newUserId += '_1';
         const newUser = {
-          id: 'u_' + Date.now(),
+          id: newUserId,
           name: name.slice(0, 30),
           avatar: state.newUserAvatar,
           color: state.newUserColor,
@@ -1469,6 +1551,10 @@
         }
         const jsonStr = JSON.stringify(state.users.map(({ id, name, avatar, color, picks }) => ({ id, name, avatar, color, picks })));
         const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+        if (encoded.length + '#share='.length > MAX_SHARE_LENGTH) {
+          showToast('⚠️ 分享資料過大，請減少成員或勾選場次後再試');
+          return;
+        }
         const shareUrl = `${window.location.origin}${window.location.pathname}#share=${encoded}`;
         copyTextToClipboard(shareUrl, '🔗 已複製全團分享網址！對方開啟後即可匯入名單');
       });
