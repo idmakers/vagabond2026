@@ -1,0 +1,12 @@
+/* Poster-inspired accent colors; shared timetable engine and behavior are unchanged. */
+body.emerge-theme { background: #032f33; color: #fff8ce; }
+body.emerge-theme .bg-slate-900, body.emerge-theme header { background-color: #073d40; }
+body.emerge-theme .bg-slate-950, body.emerge-theme .timetable-wrapper { background-color: #03292d; }
+body.emerge-theme .stage-header { background-color: #06434a; }
+body.emerge-theme .border-slate-800, body.emerge-theme .border-slate-700 { border-color: #24575b; }
+body.emerge-theme .show-block { background-color: #0b4448; color: #fff8ce; }
+body.emerge-theme .show-block.selected-mine { background-color: #23533c; }
+.source-notice { margin: 1rem auto 0; width: min(100% - 2rem, 1568px); padding: 1rem; border: 1px solid #bba24a; border-radius: 14px; color: #fff8ce; background: #174748; line-height: 1.7; font-size: .85rem; }
+.source-notice strong { color: #fde047; }
+.source-notice p { margin: .35rem 0 0; }
+.source-notice a { color: #fde047; text-decoration: underline; text-underline-offset: 3px; }
