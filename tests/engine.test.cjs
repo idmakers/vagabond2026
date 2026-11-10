@@ -8,7 +8,7 @@ const C = require('../core.js');
 const root = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const source = { window: {} };
-vm.runInNewContext(read('data/festival.js'), source);
+vm.runInNewContext(read('vagabond2026/data/festival.js'), source);
 const original = JSON.parse(JSON.stringify(source.window.FESTIVAL_CONFIG));
 const clone = value => JSON.parse(JSON.stringify(value));
 const sample = () => JSON.parse(read('festival-config.sample.json'));
@@ -34,12 +34,12 @@ function threeDays() {
   return raw;
 }
 
-async function boot(t, { raw = original, hash = '', stored = {}, page = 'index.html', url } = {}) {
+async function boot(t, { raw = original, hash = '', stored = {}, page = 'vagabond2026/index.html', url } = {}) {
   const errors = [], copies = [], downloads = [], blobs = new Map();
   const virtualConsole = new VirtualConsole();
   virtualConsole.on('jsdomError', e => errors.push(e.message));
   const dom = new JSDOM(read(page), {
-    url: url || `https://example.test/index.html${hash}`,
+    url: url || `https://example.test/vagabond2026/index.html${hash}`,
     runScripts: 'outside-only', virtualConsole,
     beforeParse(w) {
       w.TextEncoder = TextEncoder; w.TextDecoder = TextDecoder; w.Blob = Blob;
@@ -81,7 +81,7 @@ test('current dataset retains all 74 slots, IDs and corrected artist biography',
 });
 
 test('engine and templates contain no activity identifiers or executable HTML assembly', () => {
-  for (const file of ['index.html', 'app.js', 'core.js', 'style.css', 'help.html']) {
+  for (const file of ['vagabond2026/index.html', 'app.js', 'core.js', 'style.css', 'vagabond2026/help.html']) {
     const content = read(file);
     assert.doesNotMatch(content, /vagabond|浪人祭|鯤鯓|kunshen|20261107|grid-cols-7/i, file);
     assert.doesNotMatch(content, /\binnerHTML\b|\bouterHTML\b|insertAdjacentHTML|\bonclick\s*=/i, file);
@@ -294,7 +294,7 @@ test('invalid config fails visibly, help is generic, no server required for file
   const bad=sample(); bad.meta.officialUrl='javascript:alert(1)';
   const a=await boot(t,{raw:bad}); assert.ok(a.d.querySelector('#config-error').textContent.includes('無法載入'));
   assert.equal(a.d.querySelectorAll('#timetable-stage-columns > div').length,0);
-  const help=await boot(t,{raw:sample(),page:'help.html'}); assert.ok(help.d.title.includes('範例音樂祭'));
+  const help=await boot(t,{raw:sample(),page:'vagabond2026/help.html'}); assert.ok(help.d.title.includes('範例音樂祭'));
   const file=await boot(t,{raw:sample(),url:'file:///tmp/index.html'}); assert.equal(file.d.querySelectorAll('#day-tabs button').length,2);
 });
 
@@ -307,18 +307,18 @@ test('schema sanitization handles duplicates, invalid types, bounded IDs and obs
 });
 
 test('actual deferred asset order works under a project subpath and file URLs', async t => {
-  for (const base of ['https://example.test/project/index.html','file:///tmp/project/index.html']) {
+  for (const base of ['https://example.test/project/vagabond2026/index.html','file:///tmp/project/vagabond2026/index.html']) {
     const requested = [], errors = [];
     class LocalAssets extends ResourceLoader {
       fetch(url) {
-        const file = ['data/festival.js','core.js','app.js','style.css'].find(name => new URL(url).pathname.endsWith('/'+name));
+        const file = ['vagabond2026/data/festival.js','core.js','app.js','style.css'].find(name => new URL(url).pathname.endsWith('/'+name));
         if (!file) return null; // No external network or CDN is used in tests.
         requested.push(file);
         return Promise.resolve(Buffer.from(read(file)));
       }
     }
     const console = new VirtualConsole(); console.on('jsdomError', error => errors.push(error.message));
-    const dom = new JSDOM(read('index.html'), { url:base, resources:new LocalAssets(), runScripts:'dangerously', virtualConsole:console,
+    const dom = new JSDOM(read('vagabond2026/index.html'), { url:base, resources:new LocalAssets(), runScripts:'dangerously', virtualConsole:console,
       beforeParse(w) { w.TextEncoder=TextEncoder; w.TextDecoder=TextDecoder; }
     });
     t.after(()=>dom.window.close());
@@ -326,6 +326,6 @@ test('actual deferred asset order works under a project subpath and file URLs', 
     assert.deepEqual(errors,[]); assert.equal(dom.window.document.querySelectorAll('#day-tabs button').length,2);
     assert.equal(dom.window.document.querySelectorAll('#timetable-stage-headers > div').length,7);
     assert.equal(dom.window.document.title,original.meta.pageTitle);
-    assert.deepEqual(requested.filter(name=>name.endsWith('.js')),['data/festival.js','core.js','app.js']);
+    assert.deepEqual(requested.filter(name=>name.endsWith('.js')),['vagabond2026/data/festival.js','core.js','app.js']);
   }
 });

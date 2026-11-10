@@ -1,6 +1,6 @@
 # Event Timetable Template Engine
 
-可重複使用的多舞台音樂祭跑場時間表。活動資料集中於 `data/festival.js`，畫面、時間計算、成員紀錄與匯出由通用引擎處理。目前附帶的正式資料為「2026 浪人祭」，保留原有 74 場演出及場次 ID。
+可重複使用的多舞台音樂祭跑場時間表。每個活動的資料集中於各自資料夾的 `活動資料夾/data/festival.js`，畫面、時間計算、成員紀錄與匯出由通用引擎處理。目前附帶的正式資料為「2026 浪人祭」，保留原有 74 場演出及場次 ID。
 
 純前端、免登入、零後端資料庫，直接部署到 GitHub Pages 或其他靜態主機即可使用。**使用網站及部署不需要 Python、Node.js、npm 或建置步驟。**
 
@@ -8,8 +8,9 @@
 
 已建立的活動實例：
 
-- 浪人祭 2026：網站根目錄。
-- 浮現祭 EMERGE FEST 2026：[開啟互動時間表](https://vagabond.justwe.uk/emerge2026/)，資料依提供的兩張圖片轉錄，包含 86 個時段。來源及範圍見 `emerge2026/sources.html`；共用同一套通用引擎，活動紀錄分開保存。
+- 活動入口：網站根目錄，活動清單在 `data/festivals.js`。
+- 浪人祭 2026：[開啟互動時間表](https://fes-time-table.justwe.uk/vagabond2026/)，檔案位於 `vagabond2026/`。
+- 浮現祭 EMERGE FEST 2026：[開啟互動時間表](https://fes-time-table.justwe.uk/emerge2026/)，資料依提供的兩張圖片轉錄，包含 86 個時段。來源及範圍見 `emerge2026/sources.html`；共用同一套通用引擎，活動紀錄分開保存。
 
 - 設定任意活動日期與舞台，動態建立分頁、舞台欄位及每天的時間刻度。
 - 時間軸選團、樂團／曲風搜尋、縮放、突顯已選與團友熱門標記。
@@ -23,7 +24,7 @@
 
 ### 1. 填寫 JSON，放入活動設定
 
-複製 `festival-config.sample.json`，填寫 `meta`、`days`、`stages` 與 `events`。完成後，將整個 JSON 物件放入 `data/festival.js`：
+先複製 `vagabond2026/` 活動資料夾並重新命名，例如 `my-festival-2027/`。再複製 `festival-config.sample.json`，填寫 `meta`、`days`、`stages` 與 `events`。完成後，將整個 JSON 物件放入 `活動資料夾/data/festival.js`：
 
 ```js
 window.FESTIVAL_CONFIG = {
@@ -31,7 +32,7 @@ window.FESTIVAL_CONFIG = {
 };
 ```
 
-也就是在 JSON 物件前加上 `window.FESTIVAL_CONFIG = `，最後加上 `;`。修改已部署站點時，真正載入的是 **data/festival.js**，不是 sample JSON。這種一般 script 載入方式也支援本機 `file://`，不用啟動伺服器或處理 fetch CORS。
+也就是在 JSON 物件前加上 `window.FESTIVAL_CONFIG = `，最後加上 `;`。修改已部署站點時，真正載入的是 **各活動資料夾內的 data/festival.js**，不是 sample JSON。這種一般 script 載入方式也支援本機 `file://`，不用啟動伺服器或處理 fetch CORS。
 
 - 每個活動使用不同且穩定的 `meta.festivalId`，例如 `my-festival-2027`。
 - `dayId`、舞台 `id`、場次 `id` 在各自清單內必須唯一；場次必須參照存在的日期及舞台。
@@ -40,7 +41,7 @@ window.FESTIVAL_CONFIG = {
 
 ### 2. 客製網頁標題與主題
 
-同樣只需編輯 `data/festival.js`：
+同樣只需編輯 `活動資料夾/data/festival.js`：
 
 | 設定 | 用途 |
 | --- | --- |
@@ -57,7 +58,9 @@ window.FESTIVAL_CONFIG = {
 
 主頁與使用說明共用活動設定，不必到 HTML 或引擎內搜尋替換活動名稱。
 
-### 3. 部署到 GitHub Pages
+### 3. 加入活動入口並部署到 GitHub Pages
+
+在根目錄 `data/festivals.js` 新增活動卡片，填入相同的活動識別及 `./my-festival-2027/` 路徑。共用的 `app.js`、`core.js` 與 `style.css` 維持根目錄；活動頁用 `../` 載入，無須複製引擎。
 
 上傳專案檔案，在儲存庫 **Settings → Pages** 選擇 **Deploy from a branch → main → / (root)**。所有資源使用相對路徑，可部署於專案子路徑或自訂網域。
 
@@ -115,6 +118,12 @@ window.FESTIVAL_CONFIG = {
 
 舊版分享沒有活動識別，無法完整確認來源；因此這項相容預設關閉，只在原活動設定啟用。重新建活動時不要沿用這些相容選項。
 
+## 活動資料夾搬移相容性
+
+浪人祭已從根目錄搬到 `vagabond2026/`。活動識別、場次 ID 及儲存鍵不變，同一來源的本機紀錄可繼續使用。舊根目錄的 `#share=`／`#cloud=` 陣列快照會導向浪人祭；新版快照依已知活動識別導向對應資料夾，保留 query 與 hash，活動頁仍會驗證內容並詢問是否取代。未知、損壞或過大的分享不會自動導向或寫入紀錄。
+
+舊 `help.html#privacy` 會導向 `vagabond2026/help.html#privacy`。更換網域與更換資料夾不同：跨網域不會自動搬移瀏覽器資料；舊網域能否轉址仍取決於 DNS 與網站託管設定。
+
 ## 匯出
 
 | 功能 | 範圍 |
@@ -129,21 +138,26 @@ CSV 會跳脫引號、逗號及換行，並防止文字被試算表視為公式�
 
 所有設定與分享中的外部文字都經由 DOM `textContent` 填入；動態按鈕使用事件監聽，沒有以字串組成的 HTML／onclick。顏色及官方網址經驗證後才設定到對應屬性。
 
-本工具不需要帳號或站方資料庫；成員與選團紀錄儲存在使用者瀏覽器。不代表所有服務零紀錄：目前頁面仍使用外部 Tailwind CDN 與 Google Fonts，GitHub Pages 及相關外部服務也可能處理 IP 等連線資料。完整操作、AI 提醒及隱私說明請開啟 `help.html`。
+本工具不需要帳號或站方資料庫；成員與選團紀錄儲存在使用者瀏覽器。不代表所有服務零紀錄：目前頁面仍使用外部 Tailwind CDN 與 Google Fonts，GitHub Pages 及相關外部服務也可能處理 IP 等連線資料。完整操作、AI 提醒及隱私說明請開啟各活動資料夾的 `help.html`。
 
 完整樣式與字型需要網路；這不是離線快取 PWA。本機直接開啟可載入活動資料，但不同瀏覽器的 file:// 本機儲存／剪貼簿政策可能不同；儲存失敗時會提示，分享給他人請使用已部署的公開網址。
 
 ## 檔案結構
 
 ```text
-index.html                    通用頁面結構
+index.html                    活動選擇入口
+catalog.js / catalog.css      活動卡片與舊分享相容導向
+data/festivals.js             活動清單
+vagabond2026/index.html       浪人祭時間表
+vagabond2026/help.html        浪人祭使用與隱私說明
+vagabond2026/data/festival.js 浪人祭設定
+emerge2026/                  浮現祭頁面與獨立資料
 app.js                        DOM 渲染、操作、保存與分享
 core.js                       設定驗證、時間計算、資料規則及匯出
 style.css                     時間軸與主題樣式
-data/festival.js              目前活動唯一執行設定
 festival-config.sample.json   新活動範本
 festival-config.schema.json   結構介面（JSON Schema）
-help.html                     通用使用與隱私說明
+help.html / legacy-help.js    舊使用說明路徑相容導向
 CNAME                         原站自訂網域
 tests/engine.test.cjs         功能、安全及多活動回歸測試
 ```

@@ -50,7 +50,7 @@ test('Emerge shares are activity-bound and cannot import old or Vagabond snapsho
   const hash='#share='+C.encodeSnapshot([user],config);
   assert.deepEqual(C.decodeSnapshot(hash,config)[0].picks,user.picks);
   assert.equal(C.storageKey(config),'timetable_picks_emerge2026');
-  const original={window:{}}; vm.runInNewContext(read('data/festival.js'),original);
+  const original={window:{}}; vm.runInNewContext(read('vagabond2026/data/festival.js'),original);
   assert.throws(()=>C.decodeSnapshot(hash,C.validateConfig(original.window.FESTIVAL_CONFIG)));
   assert.throws(()=>C.decodeSnapshot('#share='+Buffer.from(JSON.stringify([user])).toString('base64'),config));
 });

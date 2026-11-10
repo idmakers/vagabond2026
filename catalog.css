@@ -1,0 +1,22 @@
+:root { color-scheme: dark; font-family: system-ui, -apple-system, "Microsoft JhengHei", sans-serif; background: #060b19; color: #f1f5f9; line-height: 1.7; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; }
+main { max-width: 1100px; margin: auto; padding: 64px 24px 32px; }
+.eyebrow { font-size: .8rem; letter-spacing: .12em; color: #67e8f9; font-weight: 800; }
+h1 { font-size: clamp(2rem, 6vw, 3.4rem); line-height: 1.2; margin: 16px 0; }
+.intro, footer { color: #a6b6cb; }
+.intro { max-width: 680px; margin-bottom: 32px; }
+#festival-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); gap: 24px; }
+.festival-card { --accent: #06b6d4; display: flex; flex-direction: column; text-decoration: none; color: inherit; border: 1px solid #334155; border-top: 4px solid var(--accent); border-radius: 20px; background: #0f172a; padding: 28px; min-height: 300px; transition: transform .15s, border-color .15s; }
+.festival-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+.festival-card:focus-visible, a:focus-visible { outline: 3px solid #fbbf24; outline-offset: 6px; }
+.festival-icon { font-size: 2.4rem; }
+.festival-card h2 { font-size: 1.4rem; line-height: 1.5; margin: 12px 0; }
+.festival-card p { margin: 4px 0; color: #b8c7d9; }
+.festival-card .dates { color: var(--accent); font-weight: 800; }
+.open-link { color: var(--accent); padding-top: 24px; margin-top: auto; font-weight: 800; }
+#share-status { border: 1px solid #64748b; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; background: #172337; }
+#share-status:empty { display: none; }
+footer { max-width: 1100px; margin: 0 auto; padding: 24px; font-size: .85rem; }
+a { color: #67e8f9; text-underline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { .festival-card { transition: none; } }

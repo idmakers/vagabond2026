@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>音樂祭看團紀錄表</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="../style.css">
+  <script defer src="./data/festival.js"></script>
+  <script defer src="../core.js"></script>
+  <script defer src="../app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+</head>
+<body data-page="timetable" class="min-h-screen flex flex-col selection:bg-cyan-500 selection:text-slate-950">
+
+  <!-- Header and data controls -->
+  <header class="bg-slate-900 border-b border-slate-800 relative z-30">
+    <div class="max-w-[1600px] mx-auto px-4 py-4">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        
+        <!-- Brand & Title -->
+        <div class="flex items-start sm:items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 via-red-500 to-cyan-500 p-0.5 shrink-0 shadow-lg shadow-amber-500/10">
+            <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-2xl font-black">
+              <span data-festival-icon>🎵</span>
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span data-festival-name class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                音樂祭時間表
+              </span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-700/40 text-slate-300 border border-slate-600/50 flex items-center gap-1.5">
+                💾 純靜態網頁 · 紀錄儲存在本機瀏覽器
+              </span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white mt-0.5">
+              跨舞台時間軸 & 多人看團紀錄表
+            </h1>
+          </div>
+        </div>
+
+        <!-- Data Controls -->
+        <div class="flex flex-wrap items-center gap-2">
+          <a href="../index.html" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-bold">← 活動列表</a>
+          <a href="./help.html" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs sm:text-sm font-bold transition flex items-center gap-1.5">
+            <span aria-hidden="true">📖</span> 使用說明
+          </a>
+          <a data-official-link target="_blank" rel="noopener noreferrer" aria-label="官方演出陣容（另開分頁）" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-xs sm:text-sm font-bold transition flex items-center gap-1.5">
+            <span aria-hidden="true">↗</span> 官方演出陣容
+          </a>
+          <button id="btn-quick-share-url" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs sm:text-sm font-bold transition flex items-center gap-1.5">
+            <span>🔗</span> 複製全團分享網址
+          </button>
+          <button id="btn-clear-all" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-300 border border-slate-700 text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
+            <span>🗑️</span> 清除全部紀錄
+          </button>
+        </div>
+      </div>
+
+      <!-- MULTI-USER BAR (Stored in localStorage) -->
+      <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xs font-bold text-slate-400 flex items-center gap-1">
+            <span>👤 點擊切換目前紀錄人員：</span>
+          </span>
+          <div id="user-chips-container" class="flex items-center gap-1.5 flex-wrap">
+            <!-- Dynamically populated user chips -->
+          </div>
+          <button id="btn-add-user" class="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-dashed border-cyan-500/50 text-xs font-bold transition flex items-center gap-1">
+            <span>+</span> 新增團友
+          </button>
+          <button id="btn-delete-user" class="hidden px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-red-950/60 text-slate-400 hover:text-red-300 border border-slate-700 text-xs font-medium transition">
+            ✕ 刪除目前成員
+          </button>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs text-slate-400 self-end md:self-auto flex-wrap">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-sm bg-cyan-500/40 border border-cyan-400 inline-block"></span>
+            <span>當前已選 (<strong id="current-user-count" class="text-white">0</strong>)</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-sm bg-red-500/40 border border-red-500 inline-block"></span>
+            <span>時段衝堂 (<strong id="current-clash-count" class="text-red-400">0</strong>)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION & TIMETABLE TOOLBAR -->
+  <div class="sticky top-0 z-20 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md">
+    <div class="max-w-[1600px] mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Left: Day Switcher & Main Views -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <div id="day-tabs" class="inline-flex flex-wrap bg-slate-950 p-1 rounded-xl border border-slate-800" aria-label="活動日期"></div>
+
+        <div class="h-5 w-[1px] bg-slate-800 hidden sm:block"></div>
+
+        <div class="flex items-center gap-1">
+          <button data-view="grid" class="view-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition flex items-center gap-1.5">
+            <span>📊</span> 2D 時間軸總表
+          </button>
+          <button data-view="compare" class="view-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5">
+            <span>👥</span> 多人看團對照表
+          </button>
+          <button data-view="personal" class="view-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center gap-1.5">
+            <span>📋</span> 個人跑台清單與衝堂
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Zoom Scale, Filters & Search -->
+      <div id="grid-controls-bar" class="flex items-center gap-2 flex-wrap">
+        <!-- Time Zoom Controls -->
+        <div class="hidden xl:flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-xs text-slate-400">
+          <span>時間軸比例:</span>
+          <button data-zoom="2" class="zoom-btn px-1.5 py-0.5 rounded hover:text-white">緊湊</button>
+          <button data-zoom="2.6" class="zoom-btn px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold">標準</button>
+          <button data-zoom="3.5" class="zoom-btn px-1.5 py-0.5 rounded hover:text-white">寬敞</button>
+        </div>
+
+        <!-- Filter Buttons -->
+        <button id="btn-filter-selected" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition flex items-center gap-1">
+          <span>⭐</span> 突顯已選
+        </button>
+        <button id="btn-filter-friends" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium transition flex items-center gap-1">
+          <span>🔥</span> 顯示團友熱門
+        </button>
+
+        <!-- Search Box -->
+        <div class="relative w-44 sm:w-56">
+          <input type="text" id="search-input" placeholder="搜尋樂團或曲風..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-3 pr-7 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+          <button id="btn-clear-search" class="hidden absolute right-2 top-1 text-slate-500 hover:text-white text-xs">✕</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="config-error" role="alert" class="hidden mx-4 my-4 rounded-xl border border-red-500 bg-red-950 p-4 text-red-100"></div>
+  <noscript>請啟用 JavaScript 以載入活動時間表。</noscript>
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto px-2 sm:px-4 py-4">
+
+    <!-- ================= VIEW 1: 2D PROPORTIONAL TIMETABLE GRID ================= -->
+    <section id="view-grid" class="space-y-3">
+      
+      <!-- Legend & Quick Tip -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+        <div class="flex items-center gap-4 flex-wrap">
+          <span class="flex items-center gap-1.5">
+            <span class="text-cyan-400 font-bold">💡 操作提示：</span>
+            <span>直接<strong>點擊時間軸方塊</strong>即可勾選/取消想看的樂團；點擊方塊右上角 <strong>ⓘ</strong> 查看樂團介紹與試聽。</span>
+          </span>
+        </div>
+        <div id="time-band-legend" class="flex items-center gap-3 text-xs text-slate-400"></div>
+      </div>
+
+      <!-- TIMETABLE MATRIX CONTAINER -->
+      <div class="border border-slate-800 rounded-2xl overflow-hidden shadow-2xl bg-slate-950">
+        <div class="timetable-wrapper">
+          <div id="timetable-matrix" class="relative">
+            
+            <!-- Sticky Stage Headers -->
+            <div class="sticky top-0 z-30 flex bg-slate-900/95 backdrop-blur border-b border-slate-800">
+              <div class="w-16 sm:w-20 shrink-0 border-r border-slate-800 py-3 px-2 text-center text-[11px] font-mono-time font-bold text-slate-400 flex flex-col items-center justify-center">
+                <span>TIME</span>
+                <span class="text-[9px] text-slate-500"><span id="day-time-range"></span></span>
+              </div>
+              <div id="timetable-stage-headers" class="flex-1 grid divide-x divide-slate-800">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+
+            <!-- Proportional Time Body -->
+            <div id="timetable-body-container" class="relative flex" >
+              <!-- Left Time Axis Column -->
+              <div id="timetable-time-axis" class="w-16 sm:w-20 shrink-0 border-r border-slate-800 bg-slate-950/90 relative z-20 select-none">
+                <!-- Time labels every 30 mins -->
+              </div>
+
+              <!-- Dynamic stage columns -->
+              <div class="flex-1 relative">
+                <!-- Horizontal Grid Lines & Sunset Band -->
+                <div id="timetable-grid-lines" class="absolute inset-0 pointer-events-none"></div>
+
+                <!-- Dynamic stage columns -->
+                <div id="timetable-stage-columns" class="absolute inset-0 grid divide-x divide-slate-800/70">
+                  <!-- Populated via JS -->
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ================= VIEW 2: MULTI-USER COMPARISON TABLE ================= -->
+    <section id="view-compare" class="hidden space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-black text-white flex items-center gap-2">
+              <span>👥 團友觀看名單總表</span>
+              <span id="compare-day-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30"></span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">
+              依照演出時間排序，清楚呈現每個時段各個團友想去哪個舞台、哪些場次是全體必看，也能直接在表格中幫團友勾選！
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="flex items-center gap-2 text-xs text-slate-300 bg-slate-950 px-3 py-2 rounded-xl border border-slate-800 cursor-pointer">
+              <input type="checkbox" id="chk-compare-only-picked" class="rounded bg-slate-800 border-slate-600 text-cyan-500 focus:ring-0">
+              <span>僅顯示有人勾選的場次</span>
+            </label>
+            <button id="btn-export-csv" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition">
+              📥 匯出 CSV 報表
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison Matrix Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr id="compare-table-head" class="bg-slate-950 border-b border-slate-800 text-xs font-bold text-slate-400">
+                <!-- Populated via JS -->
+              </tr>
+            </thead>
+            <tbody id="compare-table-body" class="divide-y divide-slate-800/70 text-xs sm:text-sm">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ================= VIEW 3: PERSONAL SCHEDULE & CLASH SOLVER ================= -->
+    <section id="view-personal" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-black text-white flex items-center gap-2">
+              <span>📋 <span id="personal-user-title" class="text-cyan-400">尚未選擇成員</span> 的專屬時間表與衝堂分析</span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">
+              系統自動計算換場空檔與重疊分鐘數，並可匯出至手機行事曆或複製文字清單。
+            </p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="btn-export-ics" class="px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition flex items-center gap-1.5">
+              <span>📅</span> 下載 .ics 手機行事曆
+            </button>
+            <button id="btn-copy-text" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition">
+              📋 複製文字清單
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left 2 cols: Chronological Run-Sheet -->
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 class="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center justify-between">
+            <span>🏃 依時間排序跑台路線</span>
+            <span id="personal-count-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">0 場演出</span>
+          </h3>
+          <div id="personal-timeline-list" class="space-y-3">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Right 1 col: Clash Solver -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 class="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center justify-between">
+            <span>⚠️ 衝堂重疊偵測器</span>
+            <span id="personal-clash-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">0 衝突</span>
+          </h3>
+          <div id="personal-clash-list" class="space-y-3">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-slate-800 bg-slate-900/60">
+    <div class="max-w-[1600px] mx-auto px-4 py-5 text-xs sm:text-sm text-slate-400 leading-relaxed">
+      <p>非官方看團規劃工具。樂團介紹可能含 AI 生成內容，演出資訊請以官方公告為準。</p>
+      <p class="mt-1">成員與選團紀錄儲存於你的瀏覽器；分享網址包含成員資料。託管與外部服務可能記錄連線資訊。</p>
+      <a href="./help.html#privacy" class="inline-block mt-2 text-cyan-300 underline underline-offset-4 hover:text-cyan-100">免責聲明與隱私說明</a>
+    </div>
+  </footer>
+
+
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 0. ADD / EDIT USER MODAL (No Browser Prompt!) -->
+  <div id="user-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl">
+      <div class="p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">👤</span>
+          <h3 class="text-lg font-black text-white">新增 / 設定看團成員</h3>
+        </div>
+        <button id="btn-close-user-modal" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold">✕</button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">成員暱稱 (會顯示在時間軸與對照表上)</label>
+          <input type="text" id="input-new-user-name" placeholder="輸入成員暱稱" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">選擇代表頭像 Emoji</label>
+          <div id="avatar-picker-grid" class="grid grid-cols-6 gap-2">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">選擇代表標籤顏色</label>
+          <div id="color-picker-grid" class="flex flex-wrap items-center gap-2.5">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+          <button id="btn-cancel-user-modal" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">取消</button>
+          <button id="btn-confirm-add-user" class="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-black transition shadow-lg">
+            ✨ 建立並開始選團
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ARTIST DETAIL & GROUP PICKER MODAL -->
+  <div id="artist-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full max-h-[90dvh] overflow-y-auto shadow-2xl">
+      <div id="modal-header-bar" class="p-5 bg-slate-950 border-b border-slate-800 flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1.5">
+            <span id="modal-stage-pill" class="px-2.5 py-0.5 rounded text-xs font-bold bg-red-500 text-white">舞台</span>
+            <span id="modal-time-pill" class="px-2.5 py-0.5 rounded text-xs font-mono-time font-bold bg-slate-800 text-cyan-300 border border-slate-700">演出時間</span>
+          </div>
+          <h3 id="modal-artist-title" class="text-2xl font-black text-white">樂團名稱</h3>
+          <p id="modal-artist-subtitle" class="text-xs text-slate-400 mt-0.5">Origin • Genre</p>
+        </div>
+        <button id="btn-close-artist-modal" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <aside id="artist-ai-notice" aria-label="AI 生成內容提醒" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/40 text-xs sm:text-sm text-amber-200 leading-relaxed">
+          <p class="font-bold mb-1">⚠️ 樂團介紹為 AI 生成內容</p>
+          <p>樂團背景、曲風、演出亮點與介紹由 AI 生成，可能包含錯誤、推測或過時資訊，僅供參考。請以樂團官方資訊及主辦單位公告為準。</p>
+          <a data-official-link target="_blank" rel="noopener noreferrer" class="inline-block mt-2 font-bold underline underline-offset-4 hover:text-amber-100">查閱官方演出陣容與樂團資訊 ↗<span class="sr-only">（另開分頁）</span></a>
+        </aside>
+        <div class="p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-xs text-cyan-200 font-medium" id="modal-artist-highlight">
+          演出亮點介紹
+        </div>
+        <p id="modal-artist-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          詳細介紹...
+        </p>
+
+        <!-- Who is watching in the group -->
+        <div class="pt-3 border-t border-slate-800">
+          <div class="text-xs font-bold text-slate-400 mb-2">👥 點擊切換哪些團友要看這場演出：</div>
+          <div id="modal-group-toggles" class="flex flex-wrap gap-2">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Quick External Search -->
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <a id="modal-yt-link" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 text-xs font-bold transition">
+              ▶ YouTube 試聽
+            </a>
+            <a id="modal-sp-link" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition">
+              🎧 Spotify
+            </a>
+          </div>
+          <button id="modal-btn-toggle-active" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition">
+            ⭐ 加入當前人員名單
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div role="status" aria-live="polite" id="toast-box" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 border border-cyan-500/50 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs sm:text-sm font-medium">
+    <span id="toast-icon">✅</span>
+    <span id="toast-text">操作成功</span>
+  </div>
+
+  <!-- ================= APPLICATION JAVASCRIPT (PURE STATIC / LOCALSTORAGE) ================= -->
+
+</body>
+</html>
