@@ -20,5 +20,15 @@ window.FESTIVAL_CATALOG = [
     summary: '兩天・七個區域・86 個已列時段',
     icon: '🌙',
     color: '#facc15'
+  },
+  {
+    id: 'fireball2026',
+    name: '2026 火球祭 FIREBALL Fest.',
+    path: './fireball2026/',
+    dates: '2026.11.14 — 11.15',
+    venue: '樂天桃園棒球場',
+    summary: '兩天・四個舞台／區域＋特別活動・54 個時段',
+    icon: '🔥',
+    color: '#f97316'
   }
 ];

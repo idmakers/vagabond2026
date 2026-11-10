@@ -1,6 +1,6 @@
 # Event Timetable Template Engine
 
-可重複使用的多舞台音樂祭跑場時間表。每個活動的資料集中於各自資料夾的 `活動資料夾/data/festival.js`，畫面、時間計算、成員紀錄與匯出由通用引擎處理。目前附帶的正式資料為「2026 浪人祭」，保留原有 74 場演出及場次 ID。
+可重複使用的多舞台音樂祭跑場時間表。每個活動的資料集中於各自資料夾的 `活動資料夾/data/festival.js`，畫面、時間計算、成員紀錄與匯出由通用引擎處理。目前包含浪人祭、浮現祭與火球祭三個活動；浪人祭保留原有 74 場演出及場次 ID。
 
 純前端、免登入、零後端資料庫，直接部署到 GitHub Pages 或其他靜態主機即可使用。**使用網站及部署不需要 Python、Node.js、npm 或建置步驟。**
 
@@ -10,6 +10,7 @@
 
 - 活動入口：網站根目錄，活動清單在 `data/festivals.js`。
 - 浪人祭 2026：[開啟互動時間表](https://fes-time-table.justwe.uk/vagabond2026/)，檔案位於 `vagabond2026/`。
+- 火球祭 FIREBALL Fest. 2026：[開啟互動時間表](https://fes-time-table.justwe.uk/fireball2026/)，依官方演出名單及時間表整理，包含兩天 54 個時段；來源及特別活動分組說明見 `fireball2026/sources.html`。
 - 浮現祭 EMERGE FEST 2026：[開啟互動時間表](https://fes-time-table.justwe.uk/emerge2026/)，資料依提供的兩張圖片轉錄，包含 86 個時段。來源及範圍見 `emerge2026/sources.html`；共用同一套通用引擎，活動紀錄分開保存。
 
 - 設定任意活動日期與舞台，動態建立分頁、舞台欄位及每天的時間刻度。
@@ -152,6 +153,7 @@ vagabond2026/index.html       浪人祭時間表
 vagabond2026/help.html        浪人祭使用與隱私說明
 vagabond2026/data/festival.js 浪人祭設定
 emerge2026/                  浮現祭頁面與獨立資料
+fireball2026/                火球祭頁面、官方來源說明與獨立資料
 app.js                        DOM 渲染、操作、保存與分享
 core.js                       設定驗證、時間計算、資料規則及匯出
 style.css                     時間軸與主題樣式

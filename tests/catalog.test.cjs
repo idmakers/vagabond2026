@@ -22,9 +22,9 @@ function renderCatalog(t, {fragment='',search='',items=catalog}={}) {
   return {document:dom.window.document,redirects};
 }
 
-test('catalog renders both activity folders and links resolve correctly under a project path',t=>{
+test('catalog renders all activity folders and links resolve correctly under a project path',t=>{
   const a=renderCatalog(t);
-  assert.equal(a.document.querySelectorAll('.festival-card').length,2);
+  assert.equal(a.document.querySelectorAll('.festival-card').length,3);
   assert.equal(a.document.querySelector('[data-festival-id="vagabond2026"]').href,'https://example.test/project/vagabond2026/');
   assert.equal(a.document.querySelector('[data-festival-id="emerge2026"]').href,'https://example.test/project/emerge2026/');
   assert.deepEqual(a.redirects,[]);
