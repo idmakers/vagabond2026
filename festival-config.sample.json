@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "festivalId": "sample-festival-2027",
+    "festivalName": "範例音樂祭",
+    "pageTitle": "範例音樂祭｜我的跑場計畫",
+    "officialUrl": "https://example.com/",
+    "timezone": "Asia/Taipei",
+    "themeColor": "#8b5cf6",
+    "venue": "範例活動場地",
+    "icon": "🎵"
+  },
+  "days": [
+    { "dayId": "opening", "label": "第一天", "date": "2027-05-01", "timeRange": { "start": "12:00", "end": "23:00" } },
+    { "dayId": "closing", "label": "第二天", "date": "2027-05-02", "timeRange": { "start": "11:30", "end": "22:00" } }
+  ],
+  "stages": [
+    { "id": "main", "name": "主舞台", "shortName": "主舞台", "subtitle": "Main Stage", "color": "#8b5cf6" },
+    { "id": "garden", "name": "花園舞台", "shortName": "花園", "color": "#10b981" }
+  ],
+  "events": [
+    {
+      "id": "opening/main/session-01", "dayId": "opening", "stageId": "main", "name": "範例樂團 A",
+      "start": "12:30", "end": "13:10",
+      "description": { "genre": "Indie Rock", "country": "台灣", "highlight": "開場演出", "summary": "請填寫已確認的樂團介紹。", "isAIGenerated": false }
+    },
+    {
+      "id": "opening/garden/session-01", "dayId": "opening", "stageId": "garden", "name": "範例樂團 B",
+      "start": "12:50", "end": "13:30",
+      "description": { "genre": "Electronic", "country": "日本", "summary": "此處為範例資料，正式使用前請替換。", "isAIGenerated": false }
+    },
+    {
+      "id": "closing/main/finale", "dayId": "closing", "stageId": "main", "name": "範例壓軸樂團",
+      "start": "20:00", "end": "21:00",
+      "description": { "summary": "第二天壓軸演出。", "isAIGenerated": false }
+    }
+  ],
+  "ui": {
+    "memberColors": ["#06b6d4", "#ec4899", "#10b981", "#f59e0b"],
+    "memberAvatars": ["🎸", "🎧", "😎", "🌟"],
+    "timeBands": []
+  },
+  "compatibility": { "legacyStorageKeys": [], "acceptLegacyShare": false }
+}
